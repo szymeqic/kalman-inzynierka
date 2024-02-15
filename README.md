@@ -1,0 +1,1 @@
+W pliku probakalmana2.imo znajduje się kod, który realizuje komunikację z czujnikiem mpu6050, odczyt danych z tego czujnika, filtrację Kalmana pomiarów oraz przesłanie przefiltrowanych danych pomiarowych pomiarowych na serwer utworzony za pomocą mikrokontrolera esp8266  
