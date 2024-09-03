@@ -1,0 +1,10 @@
+﻿Badanie Analiza statyczna:1 rozpoczęte: 2024-06-24, 16:38:40
+Liczba konfiguracji: 1
+Siatka domyślna: Elementy 1406, Węzły 2938
+Odkształcenie jest duże w stosunku do rozmiaru modelu. Sprawdź, czy ustawienia obciążenia i wiązań zostały odpowiednio wyskalowane.
+Czas rozwiązania 1.1s
+Wskaźnik zbieżności: 6%
+Problem ze zbieżnością 
+Badanie Analiza statyczna:1 zakończone: 2024-06-24, 16:38:46
+Czas całkowity 0:00:06
+

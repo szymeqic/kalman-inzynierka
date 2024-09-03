@@ -1,0 +1,21 @@
+int poz; // pozycja (zmienna wewnetrzna)
+int v; // liczona na biezaco
+
+int poz_zmierz; // zmierzona poz
+
+int td; // okres próbkowania
+
+
+//wariancja - odchylenie^2
+
+poz = 1*poz + td*v;
+
+pred_nowa = 1*pred_stara + wariancja_predykcji * td^2;
+L = pred_nowa + waraincja_pomiaru * td^2;
+
+wzm_kalmana = pred_nowa/L;
+
+
+poz+= wzm_kalmana*(poz_zmierz - poz);
+
+pred_stara = (1-wzm_kalmana*1)*pred_nowa;

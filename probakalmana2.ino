@@ -41,6 +41,9 @@ void kalman_1d(float KalmanState, float KalmanUncertainty, float KalmanInput, fl
   Kalman1DOutput[0]=KalmanState; 
   Kalman1DOutput[1]=KalmanUncertainty;
 }
+
+// 0.004 - okres próbkowania
+// 4 - wariancja 
 void gyro_signals(void) {
   //wpisanie do rejestru informacji o czestotliwosci odciecia filtru dolnopasmowego (5 Hz)
   Wire.beginTransmission(0x68);
