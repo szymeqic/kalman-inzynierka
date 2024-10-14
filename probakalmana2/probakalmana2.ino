@@ -4,9 +4,9 @@
 #include <WiFiClient.h>
 #include <ESP8266WebServer.h>
 #include <LittleFS.h>
-#include "Interfejs.h"
-#include "ESP8266_PWM.h"
 #include <Servo.h>
+#include "Interfejs.h"
+//#include "ESP8266_PWM.h"
 float RateRoll, RatePitch, RateYaw;
 float RateCalibrationRoll, RateCalibrationPitch, RateCalibrationYaw;
 int RateCalibrationNumber;
@@ -24,8 +24,8 @@ ESP8266WebServer server(80);
 char XML[2048];
 char buf[32];
 
-int PIN_SILNIK1 = 9;
-int PIN_SILNIK2 = 10;
+int PIN_SILNIK1 = 14;
+int PIN_SILNIK2 = 12;
 
 String kodzik = "";
 String html = "";
@@ -39,11 +39,13 @@ float pwm_freq = 50;
 
 float silnik1 = 0;
 float silnik2 = 0;
+long czas =0;
 
 bool kalibracja = false;
-bool kalibracja_silnikow = false;
-bool pwm1 = false;
-bool pwm2 = false;
+
+bool pwm_min = false;
+bool pwm_max = false;
+bool pwm_zero = false;
 bool silnik1_skalibrowany = false;
 bool silnik2_skalibrowany = false;
 
@@ -114,6 +116,7 @@ void kalman_1d(float KalmanState, float KalmanUncertainty, float KalmanInput, fl
 }
 void gyro_signals(void) {
   //wpisanie do rejestru informacji o czestotliwosci odciecia filtru dolnopasmowego (5 Hz)
+
   Wire.beginTransmission(0x68);
   Wire.write(0x1A);
   Wire.write(0x05);
@@ -153,11 +156,12 @@ void gyro_signals(void) {
   AccZ=(float)AccZLSB/4096 - 0.11;
   AngleRoll=atan(AccY/sqrt(AccX*AccX+AccZ*AccZ))*1/(3.142/180);
   AnglePitch=-atan(AccX/sqrt(AccY*AccY+AccZ*AccZ))*1/(3.142/180);
+
 }
 
 void setup() {
   delay(1000);
-  Serial.begin(57600);
+  Serial.begin(9600);
   Serial.println();
   //tworzenie sieci bezprzewodowej z mikrokontrolera
   Serial.println("Konfugiracja access pointa...");
@@ -170,9 +174,9 @@ void setup() {
   server.on("/UPDATE_WYSOKOSC", UpdateWysokosc);
   server.on("/UPDATE_KAT", UpdateKat);
   server.on("/BUTTON_KALIBRACJA", KalibracjaUkladu);
-  server.on("/BUTTON_SILNIKI", KalibracjaSilnikow);
-  server.on("/BUTTON_PWM1", PodaniePWM1);
-  server.on("/BUTTON_PWM2", PodaniePWM2);
+  server.on("/BUTTON_PWM_MIN",PodaniePWM_MIN );
+  server.on("/BUTTON_PWM_MAX", PodaniePWM_MAX);
+  server.on("/BUTTON_PWM_ZERO", PodaniePWM_ZERO);
   server.begin();
   Serial.println("Serwer HTTP wystartował");
   //Serial.begin(57600);
@@ -186,6 +190,7 @@ void setup() {
   Wire.write(0x6B);
   Wire.write(0x00);
   Wire.endTransmission();
+  Serial.println("Żyroskop włączony");
 
   //ustalenie wartości kalibracyjnych
   //2000 pomiarów, w których mpu5060 powinno leżeć na płaskim podłożu
@@ -196,18 +201,23 @@ void setup() {
     RateCalibrationYaw+=RateYaw;
     delay(1);
   }
+   Serial.println("Koniec odczytu");
   //wartości kalibracyjne ustalone poprzez uśrednienie 2000 pomiarów
   RateCalibrationRoll/=2000;
   RateCalibrationPitch/=2000;
   RateCalibrationYaw/=2000;
 
+ Serial.println("Przed przypisaniem ");
+
   Silnik1.attach(PIN_SILNIK1);
   Silnik2.attach(PIN_SILNIK2);
 
+
+ Serial.println("Po przypisaniu ");
   //LoopTimer=micros();
 }
 void loop() {
-  
+  Serial.println("pętla");
   if (kalibracja){
     RateCalibrationRoll = 0;
     RateCalibrationPitch = 0;
@@ -224,32 +234,47 @@ void loop() {
     RateCalibrationYaw/=2000;
     kalibracja = false;
   }
-  if (pwm1) {
+  if (pwm_min) {
     // do zrobienia podawanie pwma o określonym wypełnieniu
     silnik1_skalibrowany = false;
     silnik2_skalibrowany = false;
     //analogWriteFreq(50);
     //PWM_Silnik1(PIN_SILNIK1, 0);
     //PWM_Silnik2(PIN_SILNIK2, 0);
-    Silnik1.write(0);
-    Silnik2.write(0);
+    //Silnik1.write(0);
+    //Silnik2.write(0);
     //PWM_Silnik1(PIN_SILNIK1, 10);
     //PWM_Silnik2(PIN_SILNIK2, 10);
-    pwm1 = false;
+    pwm_min = false;
+    Silnik1.writeMicroseconds(1000);
+    Silnik2.writeMicroseconds(1000);
   }
-  if (pwm2) {
+  else if (pwm_max) {
     // do zrobienia podawanie pwma o określonym wypełnieniu
     //analogWriteFreq(50);
     //analogWrite(PIN_SILNIK1, 0);
     //analogWrite(PIN_SILNIK2, 0);
-    Silnik1.write(180);
-    Silnik2.write(180);
+    //Silnik1.write(180);
+    //Silnik2.write(180);
+    Silnik1.writeMicroseconds(2000);
+    Silnik2.writeMicroseconds(2000);
     //PWM_Silnik1(PIN_SILNIK1, 20);
     //PWM_Silnik2(PIN_SILNIK2, 20);
-    silnik1_skalibrowany = true;
-    silnik2_skalibrowany = true;
-    pwm2 = false;
+    //silnik1_skalibrowany = true;
+    //silnik2_skalibrowany = true;
+    pwm_max = false;
   }
+  else if(pwm_zero) {
+
+    Silnik1.detach();
+    Silnik2.detach();
+    //Silnik1.writeMicroseconds(1200);
+    //Silnik2.writeMicroseconds(1200);
+    Silnik1.attach(PIN_SILNIK1);
+    Silnik2.attach(PIN_SILNIK2);
+    pwm_zero = false;
+   }
+
   gyro_signals();
   RateRoll-=RateCalibrationRoll; //poprawka o wartosci kalibracyjne
   RatePitch-=RateCalibrationPitch;
@@ -260,6 +285,7 @@ void loop() {
   kalman_1d(KalmanAnglePitch, KalmanUncertaintyAnglePitch, RatePitch, AnglePitch);
   KalmanAnglePitch=Kalman1DOutput[0]; 
   KalmanUncertaintyAnglePitch=Kalman1DOutput[1];
+  Serial.println("Gugi 112");
   Serial.print("Roll Angle [°] ");
   Serial.print(KalmanAngleRoll);
   //Serial.print(RateRoll);
@@ -268,12 +294,12 @@ void loop() {
   Serial.println(KalmanAnglePitch);
   //while (micros() - LoopTimer < 4000);
   //LoopTimer=micros();
-  if (silnik1_skalibrowany){
-    Silnik1.write(18);
-  }
-  if (silnik2_skalibrowany){
-    Silnik2.write(18);
-  }
+  //if (silnik1_skalibrowany){
+   // Silnik1.write(18);
+  //}
+  //if (silnik2_skalibrowany){
+  // Silnik2.write(18);
+  //}
   
   server.handleClient();
 }
@@ -372,56 +398,44 @@ void KalibracjaUkladu(){
   server.send(200, "text/plain", "");
 }
 
-void KalibracjaSilnikow(){
-  kalibracja_silnikow = true;
-  Serial.println("Kalibracja silnikow wlaczona");
+
+void PodaniePWM_MIN(){
+  pwm_min = true;
+  Serial.println("Podanie najmniejszego PWM");
   server.send(200, "text/plain", "");
 }
 
-void PodaniePWM1(){
-  pwm1 = true;
-  Serial.println("Podanie pierwszego PWM");
+void PodaniePWM_MAX(){
+  pwm_max = true;
+  Serial.println("Podanie największego PWM");
   server.send(200, "text/plain", "");
 }
 
-void PodaniePWM2(){
-  pwm2 = true;
-  Serial.println("Podanie drugiego PWM");
+void PodaniePWM_ZERO(){
+  pwm_max = false;
+  pwm_min = false;
+  pwm_zero = true;
+  Serial.println("Podanie zerowego PWM");
   server.send(200, "text/plain", "");
 }
 
-/*void PWM_Silnik1(int pin, float procent_wypelnienia){
-  unsigned long czas1 = millis();
-    if ((czas1 - millis() == (procent_wypelnienia / 100) * 20) && silnik1 == 1){
-      digitalWrite(pin, LOW);
-      silnik1 = 0;
-      Serial.print("Silnik 1: ");
-      Serial.println(silnik1);
-      czas1 = millis();
-    }
-    else if ((czas1 - millis() == ((100 - procent_wypelnienia) / 100) * 20) && silnik1 == 0){
-      digitalWrite(pin, HIGH);
-      silnik1 = 1;
-      Serial.print("Silnik 1: ");
-      Serial.println(silnik1);
-      czas1 = millis();
-    }
-}*/
+//void PWM_manual(int PIN, float wyp){
+  
+ // long aktCzas = micros(); //aktualny czas
+//  long czasMiniony = aktCzas - czas; // czas od ostatniego POCZĄTKU cyklu
 
-/*void PWM_Silnik2(int pin, float procent_wypelnienia){
-  unsigned long czas2 = millis();
-    if ((czas2 - millis() == (procent_wypelnienia / 100) * 20) && silnik2 == 1){
-      digitalWrite(pin, LOW);
-      silnik2 = 0;
-      Serial.print("Silnik 2: ");
-      Serial.println(silnik2);
-      czas2 = millis();
-    }
-    else if ((czas2 - millis() == ((100 - procent_wypelnienia) / 100) * 20) && silnik2 == 0){
-      digitalWrite(pin, HIGH);
-      silnik2 = 1;
-      Serial.print("Silnik 2: ");
-      Serial.println(silnik2);
-      czas2 = millis();
-    }
-}*/
+//  if(czasMiniony >= wyp*20000 && czasMiniony<20000) // skończył się czas ,,na górze'' - 20 000 mikrosekund
+  //  {digitalWrite(PIN, LOW);}
+  
+ // else if (czasMiniony >= 20000)  // upłynął czas ,,na dole''
+//  {   digitalWrite(PIN,HIGH);
+   //   czas = micros();
+  //  } 
+//}
+
+
+//void PWM(Servo silnik, float wyp){
+ // wyp =map(wyp,0,1,1000,2000);
+ // silnik.writeMicroseconds(wyp);
+//}
+
