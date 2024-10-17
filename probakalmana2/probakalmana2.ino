@@ -6,7 +6,7 @@
 #include <LittleFS.h>
 #include <Servo.h>
 #include "Interfejs.h"
-//#include "ESP8266_PWM.h"
+
 float RateRoll, RatePitch, RateYaw;
 float RateCalibrationRoll, RateCalibrationPitch, RateCalibrationYaw;
 int RateCalibrationNumber;
@@ -35,6 +35,8 @@ int wysokosc_zadana = 0;
 int wysokosc_zadana_bity = 0;
 int kat_zadany = 0;
 int kat_zadany_bity = 0;
+int pwm_1_zadany =0;
+int pwm_2_zadany =0;
 float pwm_freq = 50;
 
 float silnik1 = 0;
@@ -43,66 +45,13 @@ long czas =0;
 
 bool kalibracja = false;
 
-bool pwm_min = false;
-bool pwm_max = false;
-bool pwm_zero = false;
+bool zmiana_pwm=false;
 bool silnik1_skalibrowany = false;
 bool silnik2_skalibrowany = false;
 
 Servo Silnik1;
 Servo Silnik2;
-void handleRoot(){
-  // funkcja pozwalajaca stworzyc 'strone internetowa' z danymi
-  kodzik = "";
-  kodzik += "<!DOCTYPE html> <html>";
 
-  kodzik += "<style>";
-  kodzik += ".bodytext { font-family: \"Verdana\", \"Arial\", sans-serif; font-size: 24px;";
-  kodzik += "text-align: left; font-weight: light; border-radius: 5px; display:inline; }";
-  kodzik += ".category { font-family: \"Verdana\", \"Arial\", sans-serif; font-weight: bold;";
-  kodzik += "font-size: 32px; line-height: 50px; padding: 20px 10px 0px 10px; color:#000000; }";
-  kodzik += "</style>";
-//<meta http-equiv=\"refresh\" content=\"2\"> 
-  kodzik += "<body> <head> </head>"; //w tagu meta jest automatyczne odswiezanie strony co 2 sekundy
-  kodzik += "<div class=\"category\">Dane z MPU5060</div>";
-  kodzik += "<div class=\"bodytext\" id=\"kat_osi_x\">Kat obrotu wokol osi X: ";
-  kodzik += KalmanAngleRoll;
-  kodzik += "</div> <br> <div class=\"bodytext\" id=\"kat_osi_y\">Kat obrotu wokol osi Y: ";
-  kodzik += KalmanAnglePitch;
-  kodzik += "</div> </body>";
-
-  kodzik += "<div class=\"category\">Sensor Controls</div>";
-  kodzik += "<br>";
-  //kodzik += "<div class=\"bodytext\">LED </div>";
-  //kodzik += "<button type=\"button\" id = \"btn0\">Toggle</button></div>";
-  //kodzik += "<br>";
-  //kodzik += "<div class=\"bodytext\">LED </div>";
-  //kodzik += "<button type=\"button\" id = \"btn1\">Toggle</button></div>";
-  //kodzik += "<br>";
-  kodzik += "<div class=\"bodytext\">Wpisz zadane wychylenie drona:   </div>";
-  kodzik += "<input type=\"text\" id=\"kat\">"; 
-  kodzik += "<br>";
-  kodzik += "<div class=\"bodytext\">Wpisz zadana wysokosc drona:   </div>";
-  kodzik += "<input type=\"text\" id=\"wysokosc\">";
-
-  //kodzik += "<script type=\"text/javascript\" src=\"http://code.jquery.com/jquery-1.8.2.js\"> $(document).ready(function() {";
-  //kodzik += "var timeout = setTimeout(reloadChat, 2000); $.ajax({ type: \"GET\", url: \"url\",";
-  //kodzik += "success: function(data) { $(\'#kat_osi_x\').html(data); timeout = setTimeout(reloadChat, 2000);";
-  //kodzik += "} }); } }); </script> </html>";
-
-  os_x = String(KalmanAngleRoll);
-
-  kodzik += "<script>";
-  kodzik += "function myTimer() { ";
-  kodzik += "document.getElementById(\"kat_osi_x\").innerHTML = \"Kat obrotu wokol osi X: \" + ";
-  kodzik += os_x;
-  //kodzik += KalmanAngleRoll;
-  kodzik += " } ";
-  kodzik += "setInterval(myTimer, 1000);";
-  kodzik += "</script> </html>";
-
-  server.send(200, "text/html", kodzik);
-}
 
 void kalman_1d(float KalmanState, float KalmanUncertainty, float KalmanInput, float KalmanMeasurement) {
   //funkcja realizujaca filtr Kalmana
@@ -177,6 +126,8 @@ void setup() {
   server.on("/BUTTON_PWM_MIN",PodaniePWM_MIN );
   server.on("/BUTTON_PWM_MAX", PodaniePWM_MAX);
   server.on("/BUTTON_PWM_ZERO", PodaniePWM_ZERO);
+  server.on("/AKTUALIZUJ_PWM_1", ZmianaPWM_1);
+  server.on("/AKTUALIZUJ_PWM_2", ZmianaPWM_2);
   server.begin();
   Serial.println("Serwer HTTP wystartował");
   //Serial.begin(57600);
@@ -190,7 +141,7 @@ void setup() {
   Wire.write(0x6B);
   Wire.write(0x00);
   Wire.endTransmission();
-  Serial.println("Żyroskop włączony");
+
 
   //ustalenie wartości kalibracyjnych
   //2000 pomiarów, w których mpu5060 powinno leżeć na płaskim podłożu
@@ -201,23 +152,18 @@ void setup() {
     RateCalibrationYaw+=RateYaw;
     delay(1);
   }
-   Serial.println("Koniec odczytu");
+
   //wartości kalibracyjne ustalone poprzez uśrednienie 2000 pomiarów
   RateCalibrationRoll/=2000;
   RateCalibrationPitch/=2000;
   RateCalibrationYaw/=2000;
 
- Serial.println("Przed przypisaniem ");
 
   Silnik1.attach(PIN_SILNIK1);
   Silnik2.attach(PIN_SILNIK2);
 
-
- Serial.println("Po przypisaniu ");
-  //LoopTimer=micros();
 }
 void loop() {
-  Serial.println("pętla");
   if (kalibracja){
     RateCalibrationRoll = 0;
     RateCalibrationPitch = 0;
@@ -234,46 +180,6 @@ void loop() {
     RateCalibrationYaw/=2000;
     kalibracja = false;
   }
-  if (pwm_min) {
-    // do zrobienia podawanie pwma o określonym wypełnieniu
-    silnik1_skalibrowany = false;
-    silnik2_skalibrowany = false;
-    //analogWriteFreq(50);
-    //PWM_Silnik1(PIN_SILNIK1, 0);
-    //PWM_Silnik2(PIN_SILNIK2, 0);
-    //Silnik1.write(0);
-    //Silnik2.write(0);
-    //PWM_Silnik1(PIN_SILNIK1, 10);
-    //PWM_Silnik2(PIN_SILNIK2, 10);
-    pwm_min = false;
-    Silnik1.writeMicroseconds(1000);
-    Silnik2.writeMicroseconds(1000);
-  }
-  else if (pwm_max) {
-    // do zrobienia podawanie pwma o określonym wypełnieniu
-    //analogWriteFreq(50);
-    //analogWrite(PIN_SILNIK1, 0);
-    //analogWrite(PIN_SILNIK2, 0);
-    //Silnik1.write(180);
-    //Silnik2.write(180);
-    Silnik1.writeMicroseconds(2000);
-    Silnik2.writeMicroseconds(2000);
-    //PWM_Silnik1(PIN_SILNIK1, 20);
-    //PWM_Silnik2(PIN_SILNIK2, 20);
-    //silnik1_skalibrowany = true;
-    //silnik2_skalibrowany = true;
-    pwm_max = false;
-  }
-  else if(pwm_zero) {
-
-    Silnik1.detach();
-    Silnik2.detach();
-    //Silnik1.writeMicroseconds(1200);
-    //Silnik2.writeMicroseconds(1200);
-    Silnik1.attach(PIN_SILNIK1);
-    Silnik2.attach(PIN_SILNIK2);
-    pwm_zero = false;
-   }
 
   gyro_signals();
   RateRoll-=RateCalibrationRoll; //poprawka o wartosci kalibracyjne
@@ -285,23 +191,17 @@ void loop() {
   kalman_1d(KalmanAnglePitch, KalmanUncertaintyAnglePitch, RatePitch, AnglePitch);
   KalmanAnglePitch=Kalman1DOutput[0]; 
   KalmanUncertaintyAnglePitch=Kalman1DOutput[1];
-  Serial.println("Gugi 112");
-  Serial.print("Roll Angle [°] ");
-  Serial.print(KalmanAngleRoll);
+  //Serial.print("Roll Angle [°] ");
+  //Serial.print(KalmanAngleRoll);
   //Serial.print(RateRoll);
-  Serial.print(" Pitch Angle [°] ");
+  //Serial.print(" Pitch Angle [°] ");
   //Serial.println(RatePitch);
-  Serial.println(KalmanAnglePitch);
-  //while (micros() - LoopTimer < 4000);
-  //LoopTimer=micros();
-  //if (silnik1_skalibrowany){
-   // Silnik1.write(18);
-  //}
-  //if (silnik2_skalibrowany){
-  // Silnik2.write(18);
-  //}
+  //Serial.println(KalmanAnglePitch);
   
   server.handleClient();
+
+  Serial.print("PWM 1: ");
+  Serial.println(pwm_1_zadany);
 }
 
 void SendXML() {
@@ -400,42 +300,56 @@ void KalibracjaUkladu(){
 
 
 void PodaniePWM_MIN(){
-  pwm_min = true;
-  Serial.println("Podanie najmniejszego PWM");
+  Silnik1.writeMicroseconds(1000);
+  Silnik2.writeMicroseconds(1000);
   server.send(200, "text/plain", "");
 }
 
 void PodaniePWM_MAX(){
-  pwm_max = true;
-  Serial.println("Podanie największego PWM");
+  Silnik1.writeMicroseconds(2000);
+  Silnik2.writeMicroseconds(2000);
   server.send(200, "text/plain", "");
 }
 
 void PodaniePWM_ZERO(){
-  pwm_max = false;
-  pwm_min = false;
-  pwm_zero = true;
-  Serial.println("Podanie zerowego PWM");
+
+  Silnik1.detach();
+  Silnik2.detach();
+  Silnik1.attach(PIN_SILNIK1);
+  Silnik2.attach(PIN_SILNIK2);
   server.send(200, "text/plain", "");
 }
 
-//void PWM_manual(int PIN, float wyp){
-  
- // long aktCzas = micros(); //aktualny czas
-//  long czasMiniony = aktCzas - czas; // czas od ostatniego POCZĄTKU cyklu
+void ZmianaPWM_1(){
+  String t_state = server.arg("PWM1");
+  Serial.println(t_state);
 
-//  if(czasMiniony >= wyp*20000 && czasMiniony<20000) // skończył się czas ,,na górze'' - 20 000 mikrosekund
-  //  {digitalWrite(PIN, LOW);}
-  
- // else if (czasMiniony >= 20000)  // upłynął czas ,,na dole''
-//  {   digitalWrite(PIN,HIGH);
-   //   czas = micros();
-  //  } 
-//}
+  // conver the string sent from the web page to an int
+  pwm_1_zadany = t_state.toInt();
 
+  //Zmiana PWM silnika
+  Silnik1.writeMicroseconds(pwm_1_zadany);
 
-//void PWM(Servo silnik, float wyp){
- // wyp =map(wyp,0,1,1000,2000);
- // silnik.writeMicroseconds(wyp);
-//}
+  strcpy(buf, "");
+  sprintf(buf, "%d", pwm_1_zadany);
+  sprintf(buf, buf);
+
+  // now send it back
+  server.send(200, "text/plain", buf); //Send web page
+}
+void ZmianaPWM_2(){
+  String t_state = server.arg("PWM2");
+
+  // conver the string sent from the web page to an int
+  pwm_2_zadany = t_state.toInt();
+  Silnik2.writeMicroseconds(pwm_2_zadany);
+
+  strcpy(buf, "");
+  sprintf(buf, "%d", pwm_2_zadany);
+  sprintf(buf, buf);
+
+  // now send it back
+  server.send(200, "text/plain", buf); //Send web page
+}
+
 
