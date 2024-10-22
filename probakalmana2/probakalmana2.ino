@@ -25,32 +25,36 @@ char XML[2048];
 char buf[32];
 
 int PIN_SILNIK1 = 14;
-int PIN_SILNIK2 = 12;
+int PIN_SILNIK2 = 12; //GPIO12
 
-String kodzik = "";
-String html = "";
-String os_x = "";
 
 int wysokosc_zadana = 0;
-int wysokosc_zadana_bity = 0;
 int kat_zadany = 0;
-int kat_zadany_bity = 0;
 int pwm_1_zadany =0;
 int pwm_2_zadany =0;
 float pwm_freq = 50;
 
-float silnik1 = 0;
-float silnik2 = 0;
 long czas =0;
 
 bool kalibracja = false;
 
-bool zmiana_pwm=false;
 bool silnik1_skalibrowany = false;
 bool silnik2_skalibrowany = false;
 
 Servo Silnik1;
 Servo Silnik2;
+
+float e =0;
+float e_stary =0;
+float calka =0;
+float u =0;
+const float u_min = 0; //0% mocy silnika
+const float u_max = 1; //100% silnika
+const float ts = 0.05; //czas probkowania (mysle ze co 50ms wystarczy)
+
+const float kp =1;
+const float ki =1;
+const float kd = 0.2;
 
 
 void kalman_1d(float KalmanState, float KalmanUncertainty, float KalmanInput, float KalmanMeasurement) {
@@ -164,6 +168,10 @@ void setup() {
 
 }
 void loop() {
+
+  czas = millis();
+  Serial.println(czas);
+
   if (kalibracja){
     RateCalibrationRoll = 0;
     RateCalibrationPitch = 0;
@@ -199,9 +207,6 @@ void loop() {
   //Serial.println(KalmanAnglePitch);
   
   server.handleClient();
-
-  Serial.print("PWM 1: ");
-  Serial.println(pwm_1_zadany);
 }
 
 void SendXML() {
@@ -233,8 +238,8 @@ void UpdateWysokosc() {
   String t_state = server.arg("WYSOKOSC");
 
   // conver the string sent from the web page to an int
-  wysokosc_zadana_bity = t_state.toInt();
-  Serial.print("UpdateWysokosc"); Serial.println(wysokosc_zadana_bity);
+  wysokosc_zadana = t_state.toInt();
+  Serial.print("UpdateWysokosc"); Serial.println(wysokosc_zadana);
   // now set the PWM duty cycle
   //ledcWrite(0, FanSpeed);
 
@@ -250,7 +255,7 @@ void UpdateWysokosc() {
   // my simple example guesses at fan speed--ideally measure it and send back real data
   // i avoid strings at all caost, hence all the code to start with "" in the buffer and build a
   // simple piece of data
-  wysokosc_zadana = map(wysokosc_zadana_bity, 0, 255, 5, 40);
+  //wysokosc_zadana = map(wysokosc_zadana_bity, 0, 255, 5, 40);
   strcpy(buf, "");
   sprintf(buf, "%d", wysokosc_zadana);
   sprintf(buf, buf);
@@ -265,24 +270,10 @@ void UpdateKat() {
   String t_state = server.arg("KAT");
 
   // conver the string sent from the web page to an int
-  kat_zadany_bity = t_state.toInt();
-  Serial.print("UpdateKat"); Serial.println(kat_zadany_bity);
-  // now set the PWM duty cycle
-  //ledcWrite(0, FanSpeed);
+  kat_zadany = t_state.toInt();
+  Serial.print("UpdateKat"); Serial.println(kat_zadany);
 
-
-  // YOU MUST SEND SOMETHING BACK TO THE WEB PAGE--BASICALLY TO KEEP IT LIVE
-
-  // option 1: send no information back, but at least keep the page live
-  // just send nothing back
-  // server.send(200, "text/plain", ""); //Send web page
-
-  // option 2: send something back immediately, maybe a pass/fail indication, maybe a measured value
-  // here is how you send data back immediately and NOT through the general XML page update code
-  // my simple example guesses at fan speed--ideally measure it and send back real data
-  // i avoid strings at all caost, hence all the code to start with "" in the buffer and build a
-  // simple piece of data
-  kat_zadany = map(kat_zadany_bity, 0, 255, -65, 65);
+  //kat_zadany = map(kat_zadany_bity, 0, 255, -65, 65);
   strcpy(buf, "");
   sprintf(buf, "%d", kat_zadany);
   sprintf(buf, buf);
@@ -317,6 +308,8 @@ void PodaniePWM_ZERO(){
   Silnik2.detach();
   Silnik1.attach(PIN_SILNIK1);
   Silnik2.attach(PIN_SILNIK2);
+  pwm_1_zadany =0;
+  pwm_2_zadany =0;
   server.send(200, "text/plain", "");
 }
 
@@ -352,4 +345,19 @@ void ZmianaPWM_2(){
   server.send(200, "text/plain", buf); //Send web page
 }
 
+
+void  PID(){
+calka = calka +e*ts;
+float pochodna = (e - e_stary)/ts;
+u = kp*e + ki*calka + kd*pochodna; //bez sprawdzenia predkosci
+
+if(u>u_max){
+  u =u_max;
+  calka = (u_max -kp*e-kd*pochodna)/ki;}
+
+if(u < u_min){
+  u = u_min;
+  calka = (u_min -kp*e-kd*pochodna)/ki;
+}
+}
 

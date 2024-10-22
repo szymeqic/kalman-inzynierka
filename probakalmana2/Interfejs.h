@@ -201,11 +201,11 @@ table {
     <br>
     <div class="bodytext">Zadana wysokość: <span id="wysokosc"></span> cm</div>
     <br>
-    <input type="range" class="fanrpmslider" min="0" max="255" value = "0" width = "0%" oninput="UpdateWysokosc(this.value)"/>
+    <input type="range" class="fanrpmslider" min="5" max="40" value = "5" width = "0%" oninput="UpdateWysokosc(this.value)"/>
     <br>
     <div class="bodytext">Zadany kąt: <span id="kat"></span> stopni</div>
     <br>
-    <input type="range" class="fanrpmslider" min="0" max="255" value = "0" width = "0%" oninput="UpdateKat(this.value)"/>
+    <input type="range" class="fanrpmslider" min="-65" max="65" value = "0" width = "0%" oninput="UpdateKat(this.value)"/>
     <br>
     <br>
 
@@ -361,7 +361,7 @@ table {
         xhttp.onreadystatechange = function() {
 
         if (this.readyState == 4 && this.status == 200)         
-          document.getElementById("PWM1").innerHTML=this.responseText;
+          document.getElementById("PWM_1").innerHTML=this.responseText;
         }
         
         xhttp.open("PUT", "AKTUALIZUJ_PWM_1?PWM1="+wyp, true);
@@ -373,7 +373,7 @@ table {
         xhttp.onreadystatechange = function() {
 
         if (this.readyState == 4 && this.status == 200)         
-           document.getElementById("PWM2").innerHTML=this.responseText;
+           document.getElementById("PWM_2").innerHTML=this.responseText;
         
           }
         xhttp.open("PUT", "AKTUALIZUJ_PWM_2?PWM2="+wyp, true);
@@ -418,7 +418,7 @@ table {
       }       
         // you may have to play with this value, big pages need more porcessing time, and hence
         // a longer timeout
-        setTimeout("process()",100);
+        setTimeout("process()",20);
     }
   
   
