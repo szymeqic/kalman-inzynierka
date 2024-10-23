@@ -126,6 +126,7 @@ table {
     font-size: 16px;
     margin: 4px 2px;
     cursor: pointer;
+    float: right;
   }
   .foot {
     font-family: "Verdana", "Arial", sans-serif;
@@ -221,8 +222,9 @@ table {
     <input type="range" class="fanrpmslider" min="1000" max="2000" value = "1000" width = "0%" oninput="Aktualizuj_PWM(this.value, 2)"/>
     <br>
     <br>
-    <button type="button" class="btn" id="kalibracja_silnikow" onclick="KalibracjaSilnikow()">Podaj najmniejszy PWM</button>
+    <button type="button" class="btn" id="kalibracja_silnika1" onclick="KalibracjaSilnika1()">Podaj najmniejszy PWM silnika 1</button>
     <br>
+    <button type="button" class="btn" id="kalibracja_silnika2" onclick="KalibracjaSilnika2()">Podaj najmniejszy PWM silnika 2</button>
     <br>
     <br>
   </main>
@@ -247,38 +249,75 @@ table {
       return xmlHttp;
     }
 
-    function KalibracjaSilnikow() {
+    function KalibracjaSilnika1() {
       var xhttp = new XMLHttpRequest(); 
-      if (document.getElementById("kalibracja_silnikow").innerHTML == "Podaj najmniejszy PWM"){
+      if (document.getElementById("kalibracja_silnika1").innerHTML == "Podaj najmniejszy PWM silnika 1"){
         xhttp.onreadystatechange = function() {
         if (this.readyState == 4 && this.status == 200) {
-          document.getElementById("kalibracja_silnikow").innerHTML = "Podaj największy PWM";
+          document.getElementById("kalibracja_silnika1").innerHTML = "Podaj największy PWM silnika 1";
         }
       }
       
-      xhttp.open("PUT", "BUTTON_PWM_MIN", false);
+      xhttp.open("PUT", "BUTTON_PWM_MIN1", false);
       xhttp.send(); 
       }
 
-      else if (document.getElementById("kalibracja_silnikow").innerHTML == "Podaj największy PWM"){
+      else if (document.getElementById("kalibracja_silnika1").innerHTML == "Podaj największy PWM silnika 1"){
         xhttp.onreadystatechange = function() {
         if (this.readyState == 4 && this.status == 200) {
-          document.getElementById("kalibracja_silnikow").innerHTML = "Podaj zerowy PWM";
+          document.getElementById("kalibracja_silnika1").innerHTML = "Podaj zerowy PWM silnika 1";
         }
       }
       
-      xhttp.open("PUT", "BUTTON_PWM_MAX", false);
+      xhttp.open("PUT", "BUTTON_PWM_MAX1", false);
       xhttp.send(); 
       }
 
-      else if (document.getElementById("kalibracja_silnikow").innerHTML == "Podaj zerowy PWM"){
+      else if (document.getElementById("kalibracja_silnika1").innerHTML == "Podaj zerowy PWM silnika 1"){
         xhttp.onreadystatechange = function() {
         if (this.readyState == 4 && this.status == 200) {
-          document.getElementById("kalibracja_silnikow").innerHTML = "Podaj najmniejszy PWM";
+          document.getElementById("kalibracja_silnika1").innerHTML = "Podaj najmniejszy PWM silnika 1";
         }
       }
       
-      xhttp.open("PUT", "BUTTON_PWM_ZERO", false);
+      xhttp.open("PUT", "BUTTON_PWM_ZERO1", false);
+      xhttp.send(); 
+      }
+
+    }
+
+    function KalibracjaSilnika2() {
+      var xhttp = new XMLHttpRequest(); 
+      if (document.getElementById("kalibracja_silnika2").innerHTML == "Podaj najmniejszy PWM silnika 2"){
+        xhttp.onreadystatechange = function() {
+        if (this.readyState == 4 && this.status == 200) {
+          document.getElementById("kalibracja_silnika2").innerHTML = "Podaj największy PWM silnika 2";
+        }
+      }
+      
+      xhttp.open("PUT", "BUTTON_PWM_MIN2", false);
+      xhttp.send(); 
+      }
+
+      else if (document.getElementById("kalibracja_silnika2").innerHTML == "Podaj największy PWM silnika 2"){
+        xhttp.onreadystatechange = function() {
+        if (this.readyState == 4 && this.status == 200) {
+          document.getElementById("kalibracja_silnika2").innerHTML = "Podaj zerowy PWM silnika 2";
+        }
+      }
+      
+      xhttp.open("PUT", "BUTTON_PWM_MAX2", false);
+      xhttp.send(); 
+      }
+
+      else if (document.getElementById("kalibracja_silnika2").innerHTML == "Podaj zerowy PWM silnika 2"){
+        xhttp.onreadystatechange = function() {
+        if (this.readyState == 4 && this.status == 200) {
+          document.getElementById("kalibracja_silnika2").innerHTML = "Podaj najmniejszy PWM silnika 2";
+        }
+      }
+      
+      xhttp.open("PUT", "BUTTON_PWM_ZERO2", false);
       xhttp.send(); 
       }
 
