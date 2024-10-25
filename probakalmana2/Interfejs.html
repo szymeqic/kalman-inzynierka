@@ -508,7 +508,7 @@ table {
         if (this.readyState == 4 && this.status == 200)         
             document.getElementById(id + "_war").innerHTML=this.responseText;
             }
-        xhttp.open("PUT", "AKTUALIZUJ_PID?ZMIANA_PID="+id+wartosc, true);
+        xhttp.open("PUT", "AKTUALIZUJ_PID?ZMIANA_PID="+id+(wartosc*100), true);
         xhttp.send();            
     }
 

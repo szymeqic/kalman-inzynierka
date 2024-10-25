@@ -124,7 +124,7 @@ void gyro_signals(void) {
 
 void setup() {
   delay(1000);
-  Serial.begin(57600);
+  Serial.begin(9600);
   Serial.println();
   //tworzenie sieci bezprzewodowej z mikrokontrolera
   Serial.println("Konfugiracja access pointa...");
@@ -153,10 +153,13 @@ void setup() {
   //Serial.begin(57600);
   //pinMode(13, OUTPUT);
   //digitalWrite(13, HIGH);
+
   Wire.setClock(400000); //czestotliwosc zegara - 400 kHz
   Serial.println("sss");
   Wire.begin();
   Serial.println("ccc");
+  delay(1000);
+
   delay(250);
   //wlaczenie zyroskopu
   Wire.beginTransmission(0x68); 
@@ -194,27 +197,6 @@ void setup() {
 
 }
 void loop() {
-
-  //Serial.println(zmierzOdleglosc());
-  //Serial.println(3);
-  /*Serial.println("Kp wys:");
-  Serial.println(kp_wys);
-
-  Serial.println("Ki wys:");
-  Serial.println(ki_wys);
-
-  Serial.println("Kd wys:");
-  Serial.println(kd_wys);
-
-  Serial.println("Kp kat:");
-  Serial.println(kp_kat);
-
-  Serial.println("Ki kat:");
-  Serial.println(ki_kat);
-
-  Serial.println("Kd kat:");
-  Serial.println(kd_kat);
-*/
 
   if (kalibracja){
     RateCalibrationRoll = 0;
@@ -405,52 +387,46 @@ void ZmianaPWM_2(){
 
 void Aktualizuj_PID(){
   String odp = server.arg("ZMIANA_PID");
-  //String war_na_serwer ="";
   
+  String war_na_serwer ="";
 
   if(odp.startsWith("Pasek_wys_kp")){
     odp.replace("Pasek_wys_kp", "");
-    kp_wys = odp.toFloat();
-    //war_na_serwer = kp_wys;
+    kp_wys = odp.toInt()/100.0;
+    war_na_serwer = String(kp_wys);
   }
 
   if(odp.startsWith("Pasek_wys_ki")){
     odp.replace("Pasek_wys_ki", "");
-    ki_wys = odp.toFloat();
-    //war_na_serwer = ki_wys;
+    ki_wys = odp.toInt()/100.0;
+    war_na_serwer = String(ki_wys);
   }
 
   if(odp.startsWith("Pasek_wys_kd")){
     odp.replace("Pasek_wys_kd", "");
-    kd_wys = odp.toFloat();
-    //war_na_serwer = kd_wys;
+    kd_wys = odp.toInt()/100.0;
+    war_na_serwer = String(kd_wys);
   }
 
   if(odp.startsWith("Pasek_kat_kp")){
     odp.replace("Pasek_kat_kp", "");
-    kp_kat = odp.toFloat();
-    //war_na_serwer = kp_kat;
+    kp_kat = odp.toInt()/100.0;
+    war_na_serwer =String( kp_kat);
   }
 
     if(odp.startsWith("Pasek_kat_ki")){
     odp.replace("Pasek_kat_ki", "");
-    ki_kat = odp.toFloat();
-    //war_na_serwer = ki_kat;
+    ki_kat = odp.toInt()/100.0;
+    war_na_serwer = String(ki_kat);
   }
 
     if(odp.startsWith("Pasek_kat_kd")){
     odp.replace("Pasek_kat_kd", "");
-    kd_kat = odp.toFloat();
-    //war_na_serwer = kd_kat;
+    kd_kat = odp.toInt()/100.0;
+    war_na_serwer = String(kd_kat);
   }
-  // conver the string sent from the web page to an int
 
-  strcpy(buf, "");
-  sprintf(buf, "%d", odp);
-  sprintf(buf, buf);
-
-  // now send it back
-  server.send(200, "text/plain", buf); 
+  server.send(200, "text/plain", war_na_serwer); 
 
 }
 
