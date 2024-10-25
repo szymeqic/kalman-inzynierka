@@ -1,3 +1,5 @@
+const char PAGE_MAIN[] PROGMEM = R"=====(
+
 <!DOCTYPE html>
 <html lang="pl-PL" class="js-focus-visible">
 <head>
@@ -553,3 +555,5 @@ table {
   </script>
 
 </html>
+
+)=====";
