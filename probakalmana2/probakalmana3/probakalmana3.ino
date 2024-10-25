@@ -247,7 +247,7 @@ void SendXML() {
   sprintf(buf, "<Y1>%d,%d</Y1>\n", (int) (KalmanAnglePitch), abs((int) (KalmanAnglePitch * 10) - ((int) (KalmanAnglePitch) * 10)));
   strcat(XML, buf);
 
-  sprintf(buf, "<W1>%d,%d</W1>\n", (int) (wysokosc), abs((int) (wysokosc * 10) - ((int) (wysokosc) * 10)));
+  sprintf(buf, "<W1>%d,%d</W1>\n", (int) (wysokosc), abs((int) (wysokosc * 100) - ((int) (wysokosc) * 100)));
   strcat(XML, buf);
 
   strcat(XML, "</Data>\n");
