@@ -206,6 +206,7 @@ table {
     <br>
     <div class="bodytext">Obrót wokół osi Y: <div class="bodytext" id="osy">123</div></div>
     <br>
+    <div class="bodytext">Wysokość nad podstawą: <div class="bodytext" id="wys">123</div></div>
     <br>
     <button type="button" class="btn" id="kalibracja" onclick="Kalibracja()">Kalibracja czujnika</button>
     <br>
@@ -532,6 +533,10 @@ table {
       xmldoc = xmlResponse.getElementsByTagName("Y1");
       message = xmldoc[0].firstChild.nodeValue;
       document.getElementById("osy").innerHTML = message;
+
+      xmldoc = xmlResponse.getElementsByTagName("W1");
+      message = xmldoc[0].firstChild.nodeValue;
+      document.getElementById("wys").innerHTML = message;
      }
   
     // general processing code for the web page to ask for an XML steam
