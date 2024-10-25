@@ -40,6 +40,8 @@ int pwm_1_zadany =0;
 int pwm_2_zadany =0;
 float pwm_freq = 50;
 
+float wysokosc = 0.25;
+
 long czas =0;
 
 bool kalibracja = false;
@@ -243,6 +245,9 @@ void SendXML() {
   strcat(XML, buf);
 
   sprintf(buf, "<Y1>%d,%d</Y1>\n", (int) (KalmanAnglePitch), abs((int) (KalmanAnglePitch * 10) - ((int) (KalmanAnglePitch) * 10)));
+  strcat(XML, buf);
+
+  sprintf(buf, "<W1>%d,%d</W1>\n", (int) (wysokosc), abs((int) (wysokosc * 10) - ((int) (wysokosc) * 10)));
   strcat(XML, buf);
 
   strcat(XML, "</Data>\n");
