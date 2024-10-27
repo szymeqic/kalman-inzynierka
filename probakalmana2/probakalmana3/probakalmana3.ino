@@ -30,7 +30,7 @@ char buf[32];
 
 int PIN_SILNIK1 = 14;
 int PIN_SILNIK2 = 12; //GPIO12
-int PIN_ECHO =0; //SDD3  - echo do pomiaru odleglosci
+int PIN_ECHO =13; //SDD3  - echo do pomiaru odleglosci
 int PIN_TRIG = 2; //SDD2 - trig
 
 
@@ -46,18 +46,12 @@ long czas =0;
 
 bool kalibracja = false;
 
-bool silnik1_skalibrowany = false;
-bool silnik2_skalibrowany = false;
 
 Servo Silnik1;
 Servo Silnik2;
 
-float e =0;
-float e_stary =0;
-float calka =0;
-float u =0;
 const float u_min = 0; //0% mocy silnika
-const float u_max = 1; //100% silnika
+const float u_max = 100; //100% silnika
 const float ts = 0.05; //czas probkowania (mysle ze co 50ms wystarczy)
 
 float kp_wys =1;
@@ -124,118 +118,25 @@ void gyro_signals(void) {
 
 }
 
-void setup() {
-  delay(1000);
-  Serial.begin(9600);
-  Serial.println();
-  //tworzenie sieci bezprzewodowej z mikrokontrolera
-  Serial.println("Konfugiracja access pointa...");
-  WiFi.softAP(ssid, password);
-  IPAddress myIP = WiFi.softAPIP(); 
-  Serial.print("Adres IP AP: ");
-  Serial.println(myIP);
-  server.on("/", SendWebsite); //'wrzucenie' na serwer strony z danymi
-  server.on("/xml", SendXML);
-  server.on("/UPDATE_WYSOKOSC", UpdateWysokosc);
-  server.on("/UPDATE_KAT", UpdateKat);
-  server.on("/BUTTON_KALIBRACJA", KalibracjaUkladu);
-  server.on("/BUTTON_PWM_MIN1",PodaniePWM_MIN1);
-  server.on("/BUTTON_PWM_MAX1", PodaniePWM_MAX1);
-  server.on("/BUTTON_PWM_ZERO1", PodaniePWM_ZERO1);
-  server.on("/BUTTON_PWM_MIN2",PodaniePWM_MIN2);
-  server.on("/BUTTON_PWM_MAX2", PodaniePWM_MAX2);
-  server.on("/BUTTON_PWM_ZERO2", PodaniePWM_ZERO2);
-  server.on("/AKTUALIZUJ_PWM_1", ZmianaPWM_1);
-  server.on("/AKTUALIZUJ_PWM_2", ZmianaPWM_2);
-  server.on("/AKTUALIZUJ_PWM_OBA", ZmianaPWM_oba);
-  server.on("/AKTUALIZUJ_PID", Aktualizuj_PID );
-  server.begin();
-  Serial.println("Serwer HTTP wystartował");
-  Serial.println("aaasd");
-  //Serial.begin(57600);
-  //pinMode(13, OUTPUT);
-  //digitalWrite(13, HIGH);
 
-  Wire.setClock(400000); //czestotliwosc zegara - 400 kHz
-  Serial.println("sss");
-  Wire.begin();
-  Serial.println("ccc");
-  delay(1000);
 
-  delay(250);
-  //wlaczenie zyroskopu
-  Wire.beginTransmission(0x68); 
-  Serial.println("ccdddc");
-  Wire.write(0x6B);
-  Serial.println("asdfdfs");
-  Wire.write(0x00);
-  Serial.println("ccaaaaaaac");
-  Wire.endTransmission();
-  Serial.println("sss");
+bool watchdog_ts(){
+  static long czas = 0;
+  static long czas_stary =0;
+  const static long milisek = 2000000;
 
-  //ustalenie wartości kalibracyjnych
-  //2000 pomiarów, w których mpu5060 powinno leżeć na płaskim podłożu
-  for (RateCalibrationNumber=0; RateCalibrationNumber<2000; RateCalibrationNumber ++) {
-    gyro_signals();
-    RateCalibrationRoll+=RateRoll;
-    RateCalibrationPitch+=RatePitch;
-    RateCalibrationYaw+=RateYaw;
-    delay(1);
+  czas = micros();
+  if(czas - czas_stary >milisek){
+
+    czas_stary = czas;
+    return true;
+
   }
-
-  //wartości kalibracyjne ustalone poprzez uśrednienie 2000 pomiarów
-  RateCalibrationRoll/=2000;
-  RateCalibrationPitch/=2000;
-  RateCalibrationYaw/=2000;
-
-  Serial.println("sssaa");
-  //Silnik1.attach(PIN_SILNIK1);
-  //Silnik2.attach(PIN_SILNIK2);
-  Serial.println("aaaa");
-  
-  //pinMode(PIN_ECHO, INPUT);
-  //pinMode(PIN_TRIG, OUTPUT);
-  //digitalWrite(PIN_TRIG, LOW);
-
+  return false;
 }
-void loop() {
 
-  if (kalibracja){
-    RateCalibrationRoll = 0;
-    RateCalibrationPitch = 0;
-    RateCalibrationYaw = 0;
-    for (RateCalibrationNumber=0; RateCalibrationNumber<2000; RateCalibrationNumber ++) {
-    gyro_signals();
-    RateCalibrationRoll+=RateRoll;
-    RateCalibrationPitch+=RatePitch;
-    RateCalibrationYaw+=RateYaw;
-    delay(1);
-    }
-    RateCalibrationRoll/=2000;
-    RateCalibrationPitch/=2000;
-    RateCalibrationYaw/=2000;
-    kalibracja = false;
-  }
 
-  gyro_signals();
-  RateRoll-=RateCalibrationRoll; //poprawka o wartosci kalibracyjne
-  RatePitch-=RateCalibrationPitch;
-  RateYaw-=RateCalibrationYaw;
-  kalman_1d(KalmanAngleRoll, KalmanUncertaintyAngleRoll, RateRoll, AngleRoll);
-  KalmanAngleRoll=Kalman1DOutput[0]; 
-  KalmanUncertaintyAngleRoll=Kalman1DOutput[1];
-  kalman_1d(KalmanAnglePitch, KalmanUncertaintyAnglePitch, RatePitch, AnglePitch);
-  KalmanAnglePitch=Kalman1DOutput[0]; 
-  KalmanUncertaintyAnglePitch=Kalman1DOutput[1];
-  //Serial.print("Roll Angle [°] ");
-  //Serial.print(KalmanAngleRoll);
-  //Serial.print(RateRoll);
-  //Serial.print(" Pitch Angle [°] ");
-  //Serial.println(RatePitch);
-  //Serial.println(KalmanAnglePitch);
-  
-  server.handleClient();
-}
+
 
 void SendXML() {
 
@@ -321,43 +222,6 @@ void KalibracjaUkladu(){
 }
 
 
-void PodaniePWM_MIN1(){
-  Silnik1.writeMicroseconds(1000);
-  server.send(200, "text/plain", "");
-}
-
-void PodaniePWM_MAX1(){
-  Silnik1.writeMicroseconds(2000);
-  delay(100);
-  Silnik1.writeMicroseconds(1000);
-  server.send(200, "text/plain", "");
-}
-
-void PodaniePWM_ZERO1(){
-  Silnik1.detach();
-  Silnik1.attach(PIN_SILNIK1);
-  pwm_1_zadany =0;
-  server.send(200, "text/plain", "");
-}
-
-void PodaniePWM_MIN2(){
-  Silnik2.writeMicroseconds(1000);
-  server.send(200, "text/plain", "");
-}
-
-void PodaniePWM_MAX2(){
-  Silnik2.writeMicroseconds(2000);
-  delay(100);
-  Silnik2.writeMicroseconds(1000);
-  server.send(200, "text/plain", "");
-}
-
-void PodaniePWM_ZERO2(){
-  Silnik2.detach();
-  Silnik2.attach(PIN_SILNIK2);
-  pwm_2_zadany =0;
-  server.send(200, "text/plain", "");
-}
 void ZmianaPWM_1(){
   String t_state = server.arg("PWM1");
   Serial.println(t_state);
@@ -454,28 +318,193 @@ void ZmianaPWM_oba(){
 
 float zmierzOdleglosc(){
   float czas =0;
+  delayMicroseconds(2);
   digitalWrite(PIN_TRIG, HIGH);
   delayMicroseconds(10);
   digitalWrite(PIN_TRIG,LOW);
 
   czas = pulseIn(PIN_ECHO, HIGH);
-  Serial.println(czas);
-  Serial.println(0);
+  //Serial.println(czas);
+  //Serial.println(0);
   return czas/58;
 
 }
 
-void  PID(float kp, float ki, float kd, float e, float e_stary, float calka, float u){
-  calka = calka +e*ts;
+void sterowanie(){
+  //najpierw wysterowujemy wysokość 
+  static float e_wys;
+  static float e_wys_stary;
+  static float calka_wys;
+
+  float ster_wys =0;
+
+  wysokosc = zmierzOdleglosc();
+
+  e_wys = wysokosc_zadana - wysokosc;
+  ster_wys = PID(kp_wys, ki_wys, kd_wys, e_wys, e_wys_stary, &calka_wys);
+  e_wys_stary = e_wys;
+
+  static float e_kat;
+  static float e_kat_stary;
+  static float calka_kat;
+
+  float ster_kat =0;   //dodatni uchyb - chcemy żeby podniósł się LANRC35A 
+                      /// czyli silnik1 musi byc podpięty do lanrc2
+  e_kat = kat_zadany -KalmanAngleRoll;
+  ster_kat = PID(kp_kat, ki_kat, kd_kat, e_kat, e_kat_stary, &calka_kat);
+  e_kat_stary = e_kat;
+
+  int delta_ster_kat = map(ster_kat, 0,100, 1000, 2000);
+  pwm_1_zadany = pwm_2_zadany = map(ster_wys, 0, 100, 1000, 2000);
+
+  pwm_1_zadany +=delta_ster_kat;
+  pwm_2_zadany -= delta_ster_kat;
+
+  if(pwm_1_zadany<1000)
+    pwm_1_zadany =1000;
+  
+  if(pwm_1_zadany >2000)
+    pwm_1_zadany =2000;
+
+    if(pwm_2_zadany<1000)
+    pwm_2_zadany =1000;
+  
+  if(pwm_2_zadany >2000)
+    pwm_2_zadany =2000;
+
+}
+
+float  PID(float kp, float ki, float kd, float e, float e_stary, float* calka){
+  *calka = *calka +e*ts;
   float pochodna = (e - e_stary)/ts;
-  u = kp*e + ki*calka + kd*pochodna; //bez sprawdzenia predkosci
+  float u = kp*e + ki*(*calka) + kd*pochodna; //bez sprawdzenia predkosci
 
   if(u>u_max){
   u =u_max;
-  calka = (u_max -kp*e-kd*pochodna)/ki;}
+  *calka = (u_max -kp*e-kd*pochodna)/ki;}
 
   if(u < u_min){
   u = u_min;
-  calka = (u_min -kp*e-kd*pochodna)/ki;
+  *calka = (u_min -kp*e-kd*pochodna)/ki;
   }
+
+  return u;
 }
+
+
+
+void loop() {
+
+
+
+  if(watchdog_ts())
+    wysokosc = zmierzOdleglosc();
+  if (kalibracja){
+    RateCalibrationRoll = 0;
+    RateCalibrationPitch = 0;
+    RateCalibrationYaw = 0;
+    for (RateCalibrationNumber=0; RateCalibrationNumber<2000; RateCalibrationNumber ++) {
+    gyro_signals();
+    RateCalibrationRoll+=RateRoll;
+    RateCalibrationPitch+=RatePitch;
+    RateCalibrationYaw+=RateYaw;
+    delay(1);
+    }
+    RateCalibrationRoll/=2000;
+    RateCalibrationPitch/=2000;
+    RateCalibrationYaw/=2000;
+    kalibracja = false;
+  }
+
+  gyro_signals();
+  RateRoll-=RateCalibrationRoll; //poprawka o wartosci kalibracyjne
+  RatePitch-=RateCalibrationPitch;
+  RateYaw-=RateCalibrationYaw;
+  kalman_1d(KalmanAngleRoll, KalmanUncertaintyAngleRoll, RateRoll, AngleRoll);
+  KalmanAngleRoll=Kalman1DOutput[0]; 
+  KalmanUncertaintyAngleRoll=Kalman1DOutput[1];
+  kalman_1d(KalmanAnglePitch, KalmanUncertaintyAnglePitch, RatePitch, AnglePitch);
+  KalmanAnglePitch=Kalman1DOutput[0]; 
+  KalmanUncertaintyAnglePitch=Kalman1DOutput[1];
+  //Serial.print("Roll Angle [°] ");
+  //Serial.print(KalmanAngleRoll);
+  //Serial.print(RateRoll);
+  //Serial.print(" Pitch Angle [°] ");
+  //Serial.println(RatePitch);
+  //Serial.println(KalmanAnglePitch);
+  
+  server.handleClient();
+}
+
+
+
+void setup() {
+  delay(1000);
+  Serial.begin(9600);
+  Serial.println();
+  //tworzenie sieci bezprzewodowej z mikrokontrolera
+  Serial.println("Konfugiracja access pointa...");
+  WiFi.softAP(ssid, password);
+  IPAddress myIP = WiFi.softAPIP(); 
+  Serial.print("Adres IP AP: ");
+  Serial.println(myIP);
+  server.on("/", SendWebsite); //'wrzucenie' na serwer strony z danymi
+  server.on("/xml", SendXML);
+  server.on("/UPDATE_WYSOKOSC", UpdateWysokosc);
+  server.on("/UPDATE_KAT", UpdateKat);
+  server.on("/BUTTON_KALIBRACJA", KalibracjaUkladu);
+  server.on("/AKTUALIZUJ_PWM_1", ZmianaPWM_1);
+  server.on("/AKTUALIZUJ_PWM_2", ZmianaPWM_2);
+  server.on("/AKTUALIZUJ_PWM_OBA", ZmianaPWM_oba);
+  server.on("/AKTUALIZUJ_PID", Aktualizuj_PID );
+  server.begin();
+  Serial.println("Serwer HTTP wystartował");
+  Serial.println("aaasd");
+  //Serial.begin(57600);
+  //pinMode(13, OUTPUT);
+  //digitalWrite(13, HIGH);
+
+  Wire.setClock(400000); //czestotliwosc zegara - 400 kHz
+  Serial.println("sss");
+  Wire.begin();
+  Serial.println("ccc");
+  delay(1000);
+
+  delay(250);
+  Serial.println(micros());
+  //wlaczenie zyroskopu
+  Wire.beginTransmission(0x68); 
+  Serial.println("ccdddc");
+  Wire.write(0x6B);
+  Serial.println("asdfdfs");
+  Wire.write(0x00);
+  Serial.println("ccaaaaaaac");
+  Wire.endTransmission();
+  Serial.println("sss");
+
+  //ustalenie wartości kalibracyjnych
+  //2000 pomiarów, w których mpu5060 powinno leżeć na płaskim podłożu
+  for (RateCalibrationNumber=0; RateCalibrationNumber<2000; RateCalibrationNumber ++) {
+    gyro_signals();
+    RateCalibrationRoll+=RateRoll;
+    RateCalibrationPitch+=RatePitch;
+    RateCalibrationYaw+=RateYaw;
+    delay(1);
+  }
+
+  //wartości kalibracyjne ustalone poprzez uśrednienie 2000 pomiarów
+  RateCalibrationRoll/=2000;
+  RateCalibrationPitch/=2000;
+  RateCalibrationYaw/=2000;
+
+
+  Silnik1.attach(PIN_SILNIK1);
+  Silnik2.attach(PIN_SILNIK2);
+
+  
+  pinMode(PIN_ECHO, INPUT);
+  pinMode(PIN_TRIG, OUTPUT);
+  digitalWrite(PIN_TRIG, LOW);
+
+}
+
