@@ -123,7 +123,7 @@ void gyro_signals(void) {
 bool watchdog_ts(){
   static long czas = 0;
   static long czas_stary =0;
-  const static long milisek = 2000000;
+  const static long milisek = 200000;
 
   czas = micros();
   if(czas - czas_stary >milisek){
@@ -327,10 +327,11 @@ float zmierzOdleglosc(){
   
   //temp = micros() - temp;
 
-  czas = pulseIn(PIN_ECHO, HIGH, 400000);//, 100000);
+  czas = pulseIn(PIN_ECHO, HIGH, 50000);    /// na 400000 działa xsss
   //Serial.println(czas);
   //Serial.println(0);
   //return temp;
+
   return czas/58;
 
 }
