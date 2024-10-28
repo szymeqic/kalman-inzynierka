@@ -318,14 +318,19 @@ void ZmianaPWM_oba(){
 
 float zmierzOdleglosc(){
   float czas =0;
+  //float temp =micros();
+  digitalWrite(PIN_TRIG, LOW);
   delayMicroseconds(2);
   digitalWrite(PIN_TRIG, HIGH);
   delayMicroseconds(10);
   digitalWrite(PIN_TRIG,LOW);
+  
+  //temp = micros() - temp;
 
-  czas = pulseIn(PIN_ECHO, HIGH);
+  czas = pulseIn(PIN_ECHO, HIGH, 400000);//, 100000);
   //Serial.println(czas);
   //Serial.println(0);
+  //return temp;
   return czas/58;
 
 }

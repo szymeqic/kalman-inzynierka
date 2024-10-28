@@ -553,7 +553,7 @@ table {
       }       
         // you may have to play with this value, big pages need more porcessing time, and hence
         // a longer timeout
-        setTimeout("process()",20);
+        setTimeout("process()",10);
     }
   
   
