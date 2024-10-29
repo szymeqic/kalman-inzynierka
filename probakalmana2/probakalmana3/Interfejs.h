@@ -286,8 +286,18 @@ table {
           <div class ="bodytext"> Współczynnik k<sub>d</sub>: <span id="Pasek_kat_kd_war"></span>   </div> 
           <input type="range" class="fanrpmslider" min="0" max="5" value = "0.01" width = "0%" step = "0.01" id = "Pasek_kat_kd" oninput="Pasek_PID(this.id, this.value)"/>
           <br>
+        </div>
+        <div class = "row">
+          <div class = "bodytext">
+        <input type="checkbox" id ="sterowanie" tryb="ręczne" oninput="Sterowanie_przycisk()" ></input>Sterowanie automatyczne
+        <br>
+        <br>
+        Aktualne sterowanie: <span id="Sterowanie_tekst" ></span>
+        <br>
       </div>
+        </div>
       </div>
+
     </div>
   </main>
 
@@ -389,6 +399,7 @@ table {
 */
     function Kalibracja() {
       var xhttp = new XMLHttpRequest(); 
+
       /*
       xhttp.onreadystatechange = function() {
         if (this.readyState == 4 && this.status == 200) {
@@ -459,7 +470,7 @@ table {
 
     function Aktualizuj_PWM(wyp, silnik){
       var xhttp = new XMLHttpRequest();
-
+      
       if(silnik==1){
         xhttp.onreadystatechange = function() {
 
@@ -514,6 +525,21 @@ table {
         xhttp.open("PUT", "AKTUALIZUJ_PID?ZMIANA_PID="+id+(wartosc*100), true);
         xhttp.send();            
     }
+
+    function Sterowanie_przycisk(){
+      var xhttp = new XMLHttpRequest();
+      xhttp.onreadystatechange = function() {
+        if (this.readyState == 4 && this.status == 200) {
+          // update the web based on reply from  ESP
+          document.getElementById("Sterowanie_tekst").innerHTML=this.responseText;
+        }
+      }
+      xhttp.open("PUT", "UPDATE_STER", true);
+      xhttp.send();
+
+      return;
+    }
+    
 
     // function to handle the response from the ESP
     function response(){

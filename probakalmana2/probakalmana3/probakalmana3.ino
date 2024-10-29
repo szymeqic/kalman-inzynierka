@@ -45,6 +45,7 @@ float wysokosc = 0.25;
 long czas =0;
 
 bool kalibracja = false;
+bool ster_auto = false;
 
 
 Servo Silnik1;
@@ -129,7 +130,7 @@ bool watchdog_ts(){
   if(czas - czas_stary >milisek){
 
     czas_stary = czas;
-    return true;
+    return true; 
 
   }
   return false;
@@ -316,6 +317,17 @@ void ZmianaPWM_oba(){
 
 }
 
+void Aktualizuj_ster(){
+  
+  ster_auto = !ster_auto;
+  if(ster_auto)
+    server.send(200, "text/plain", "Sterowanie automatyczne");
+  else 
+    server.send(200, "text/plain", "Sterowanie ręczne");  
+
+  return;
+}
+
 float zmierzOdleglosc(){
   float czas =0;
   //float temp =micros();
@@ -327,7 +339,7 @@ float zmierzOdleglosc(){
   
   //temp = micros() - temp;
 
-  czas = pulseIn(PIN_ECHO, HIGH, 50000);    /// na 400000 działa xsss
+  czas = pulseIn(PIN_ECHO, HIGH, 400000);    /// na 400000 działa xsss
   //Serial.println(czas);
   //Serial.println(0);
   //return temp;
@@ -463,6 +475,7 @@ void setup() {
   server.on("/AKTUALIZUJ_PWM_2", ZmianaPWM_2);
   server.on("/AKTUALIZUJ_PWM_OBA", ZmianaPWM_oba);
   server.on("/AKTUALIZUJ_PID", Aktualizuj_PID );
+  server.on("/UPDATE_STER", Aktualizuj_ster);
   server.begin();
   Serial.println("Serwer HTTP wystartował");
   Serial.println("aaasd");
