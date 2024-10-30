@@ -53,7 +53,7 @@ Servo Silnik2;
 
 const float u_min = 0; //0% mocy silnika
 const float u_max = 100; //100% silnika
-const float ts = 0.05; //czas probkowania (mysle ze co 50ms wystarczy)
+const float ts = 0.2; //czas probkowania (mysle ze co 50ms wystarczy)
 
 float kp_wys =1;
 float ki_wys =1;
@@ -150,6 +150,12 @@ void SendXML() {
   strcat(XML, buf);
 
   sprintf(buf, "<W1>%d,%d</W1>\n", (int) (wysokosc), abs((int) (wysokosc * 100) - ((int) (wysokosc) * 100)));
+  strcat(XML, buf);
+
+  sprintf(buf, "<PWM1>%d</PWM1>\n", pwm_1_zadany);
+  strcat(XML, buf);
+
+  sprintf(buf, "<PWM2>%d</PWM2>\n", pwm_2_zadany);
   strcat(XML, buf);
 
   strcat(XML, "</Data>\n");
@@ -369,16 +375,18 @@ void sterowanie(){
   float ster_kat =0;   //dodatni uchyb - chcemy żeby podniósł się LANRC35A 
                       /// czyli silnik1 musi byc podpięty do lanrc2
   e_kat = kat_zadany -KalmanAngleRoll;
+  //e_kat = 0;
   ster_kat = PID(kp_kat, ki_kat, kd_kat, e_kat, e_kat_stary, &calka_kat);
   e_kat_stary = e_kat;
+  //e_kat_stary = 0;
 
-  int delta_ster_kat = map(ster_kat, 0,100, 1000, 2000);
+  int delta_ster_kat = ster_kat * 0.8;
   pwm_1_zadany = pwm_2_zadany = map(ster_wys, 0, 100, 1000, 2000);
 
   pwm_1_zadany +=delta_ster_kat;
   pwm_2_zadany -= delta_ster_kat;
 
-  if(pwm_1_zadany<1000)
+  /*if(pwm_1_zadany<1000)
     pwm_1_zadany =1000;
   
   if(pwm_1_zadany >2000)
@@ -388,7 +396,7 @@ void sterowanie(){
     pwm_2_zadany =1000;
   
   if(pwm_2_zadany >2000)
-    pwm_2_zadany =2000;
+    pwm_2_zadany =2000;*/
 
 }
 
@@ -416,7 +424,7 @@ void loop() {
 
 
   if(watchdog_ts())
-    wysokosc = zmierzOdleglosc();
+    sterowanie();
   if (kalibracja){
     RateCalibrationRoll = 0;
     RateCalibrationPitch = 0;

@@ -294,6 +294,9 @@ table {
         <br>
         Aktualne sterowanie: <span id="Sterowanie_tekst" ></span>
         <br>
+        <div class="bodytext">Wypełnienie silnika 1: <span id="pwm1_wysw"></span> &mu;s</div>
+        <br>
+        <div class="bodytext">Wypełnienie silnika 2: <span id="pwm2_wysw"></span> &mu;s</div>
       </div>
         </div>
       </div>
@@ -563,6 +566,14 @@ table {
       xmldoc = xmlResponse.getElementsByTagName("W1");
       message = xmldoc[0].firstChild.nodeValue;
       document.getElementById("wys").innerHTML = message;
+
+      xmldoc = xmlResponse.getElementsByTagName("PWM1");
+      message = xmldoc[0].firstChild.nodeValue;
+      document.getElementById("pwm1_wysw").innerHTML = message;
+
+      xmldoc = xmlResponse.getElementsByTagName("PWM2");
+      message = xmldoc[0].firstChild.nodeValue;
+      document.getElementById("pwm2_wysw").innerHTML = message;
      }
   
     // general processing code for the web page to ask for an XML steam
