@@ -5,6 +5,7 @@
 #include <ESP8266WebServer.h>
 #include <LittleFS.h>
 #include <Servo.h>
+#include <Adafruit_VL53L0X.h>
 #include "Interfejs.h"
 
 
@@ -24,6 +25,8 @@ float Kalman1DOutput[]={0,0};
 const char* ssid = "Filtr Kalmana"; //nazwa sieci utworzonej przez esp8266
 const char* password = "ilovekalmanfilter";
 ESP8266WebServer server(80);
+
+Adafruit_VL53L0X lox = Adafruit_VL53L0X();
 
 char XML[2048];
 char buf[32];
@@ -335,7 +338,7 @@ void Aktualizuj_ster(){
 }
 
 float zmierzOdleglosc(){
-  float czas =0;
+  /*float czas =0;
   //float temp =micros();
   digitalWrite(PIN_TRIG, LOW);
   delayMicroseconds(2);
@@ -345,13 +348,18 @@ float zmierzOdleglosc(){
   
   //temp = micros() - temp;
 
-  czas = pulseIn(PIN_ECHO, HIGH, 400000);    /// na 400000 działa xsss
+  czas = pulseIn(PIN_ECHO, HIGH, 50000);    /// na 400000 działa xsss
   //Serial.println(czas);
   //Serial.println(0);
   //return temp;
 
-  return czas/58;
+  return czas/58;*/
 
+  //if(lox.isRangeComplete()){
+    wysokosc = (float) lox.readRange();
+  //}
+
+  return wysokosc/10;
 }
 
 void sterowanie(){
@@ -386,7 +394,7 @@ void sterowanie(){
   pwm_1_zadany +=delta_ster_kat;
   pwm_2_zadany -= delta_ster_kat;
 
-  /*if(pwm_1_zadany<1000)
+  if(pwm_1_zadany<1000)
     pwm_1_zadany =1000;
   
   if(pwm_1_zadany >2000)
@@ -396,7 +404,7 @@ void sterowanie(){
     pwm_2_zadany =1000;
   
   if(pwm_2_zadany >2000)
-    pwm_2_zadany =2000;*/
+    pwm_2_zadany =2000;
 
 }
 
@@ -423,8 +431,11 @@ void loop() {
 
 
 
-  if(watchdog_ts())
+  if(watchdog_ts() && ster_auto){
     sterowanie();
+    Silnik1.writeMicroseconds(pwm_1_zadany);
+    Silnik2.writeMicroseconds(pwm_2_zadany);
+  }
   if (kalibracja){
     RateCalibrationRoll = 0;
     RateCalibrationPitch = 0;
@@ -524,9 +535,15 @@ void setup() {
   RateCalibrationPitch/=2000;
   RateCalibrationYaw/=2000;
 
+  if (!lox.begin()){
+    Serial.println("nie udalo sie zbootowac czujnika wysokosci");
+    while(1);
+  }
 
   Silnik1.attach(PIN_SILNIK1);
   Silnik2.attach(PIN_SILNIK2);
+
+  lox.startRangeContinuous();
 
   
   pinMode(PIN_ECHO, INPUT);

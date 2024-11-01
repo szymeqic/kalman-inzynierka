@@ -217,11 +217,11 @@ table {
     <br>
     <div class="category">Wartości zadane</div>
     <br>
-    <div class="bodytext">Zadana wysokość: <span id="wysokosc"></span> cm</div>
+    <div class="bodytext">Zadana wysokość: <span id="wysokosc">5</span> cm</div>
     <br>
     <input type="range" class="fanrpmslider" min="5" max="40" value = "5" width = "0%" oninput="UpdateWysokosc(this.value)"/>
     <br>
-    <div class="bodytext">Zadany kąt: <span id="kat"></span> stopni</div>
+    <div class="bodytext">Zadany kąt: <span id="kat">0</span> stopni</div>
     <br>
     <input type="range" class="fanrpmslider" min="-65" max="65" value = "0" width = "0%" oninput="UpdateKat(this.value)"/>
     <br>
@@ -230,11 +230,11 @@ table {
 
     <div class="category">Ręczne sterowanie wypełnieniem PWM</div>
     <br>
-    <div class="bodytext">Zadane wypełnienie silnika 1: <span id="PWM_1"></span> &mu;s</div>
+    <div class="bodytext">Zadane wypełnienie silnika 1: <span id="PWM_1">1000</span> &mu;s</div>
     <br>
     <input type="range" class="fanrpmslider" min="1000" max="2000" value = "1000" width = "0%" id ="Pasek_PWM_1" oninput="Aktualizuj_PWM(this.value, 1)"/>
     <br>
-    <div class="bodytext">Zadane wypełnienie silnika 2: <span id="PWM_2"></span> &mu;s</div>
+    <div class="bodytext">Zadane wypełnienie silnika 2: <span id="PWM_2">1000</span> &mu;s</div>
     <br>
     <input type="range" class="fanrpmslider" min="1000" max="2000" value = "1000" width = "0%" id = "Pasek_PWM_2" oninput="Aktualizuj_PWM(this.value, 2)"/>
 
@@ -254,17 +254,17 @@ table {
               <div class = "bodytext" style = "font-size: 30px;">Regulacja wysokości</div>
               <br>
               <br>
-              <div class ="bodytext"> Współczynnik k<sub>p</sub>: <span id="Pasek_wys_kp_war"></span>  </div> 
+              <div class ="bodytext"> Współczynnik k<sub>p</sub>: <span id="Pasek_wys_kp_war">0.01</span>  </div> 
               <input type="range" class="fanrpmslider" min="0.01" max="15" value = "0.01" width = "0%" step = "0.01" id = "Pasek_wys_kp" oninput="Pasek_PID(this.id, this.value)"/>
               <br>
 
               <br>
-              <div class ="bodytext"> Współczynnik k<sub>i</sub>:  <span id="Pasek_wys_ki_war"></span>  </div> 
+              <div class ="bodytext"> Współczynnik k<sub>i</sub>:  <span id="Pasek_wys_ki_war">0.01</span>  </div> 
               <input type="range" class="fanrpmslider" min="0" max="5" value = "0.01" width = "0%" step = "0.01" id = "Pasek_wys_ki" oninput="Pasek_PID(this.id, this.value)"/>
               <br>
 
               <br>
-              <div class ="bodytext"> Współczynnik k<sub>d</sub>: <span id="Pasek_wys_kd_war"></span>   </div> 
+              <div class ="bodytext"> Współczynnik k<sub>d</sub>: <span id="Pasek_wys_kd_war">0.01</span>   </div> 
               <input type="range" class="fanrpmslider" min="0" max="5" value = "0.01" width = "0%" step = "0.01" id = "Pasek_wys_kd" oninput="Pasek_PID(this.id, this.value)"/>
               <br>
 
@@ -273,17 +273,17 @@ table {
           <div class = "bodytext" style = "font-size: 30px;">Regulacja kąta</div>
           <br>
           <br>
-          <div class ="bodytext"> Współczynnik k<sub>p</sub>: <span id="Pasek_kat_kp_war"></span>  </div> 
+          <div class ="bodytext"> Współczynnik k<sub>p</sub>: <span id="Pasek_kat_kp_war">0.01</span>  </div> 
           <input type="range" class="fanrpmslider" min="0.01" max="15" value = "0.01" width = "0%" step = "0.01" id = "Pasek_kat_kp" oninput="Pasek_PID(this.id, this.value)"/>
           <br>
 
           <br>
-          <div class ="bodytext"> Współczynnik k<sub>i</sub>:  <span id="Pasek_kat_ki_war"></span>  </div> 
+          <div class ="bodytext"> Współczynnik k<sub>i</sub>:  <span id="Pasek_kat_ki_war">0.01</span>  </div> 
           <input type="range" class="fanrpmslider" min="0" max="5" value = "0.01" width = "0%" step = "0.01" id = "Pasek_kat_ki" oninput="Pasek_PID(this.id, this.value)"/>
           <br>
 
           <br>
-          <div class ="bodytext"> Współczynnik k<sub>d</sub>: <span id="Pasek_kat_kd_war"></span>   </div> 
+          <div class ="bodytext"> Współczynnik k<sub>d</sub>: <span id="Pasek_kat_kd_war">0.01</span>   </div> 
           <input type="range" class="fanrpmslider" min="0" max="5" value = "0.01" width = "0%" step = "0.01" id = "Pasek_kat_kd" oninput="Pasek_PID(this.id, this.value)"/>
           <br>
         </div>
@@ -292,7 +292,7 @@ table {
         <input type="checkbox" id ="sterowanie" tryb="ręczne" oninput="Sterowanie_przycisk()" ></input>Sterowanie automatyczne
         <br>
         <br>
-        Aktualne sterowanie: <span id="Sterowanie_tekst" ></span>
+        Aktualne sterowanie: <span id="Sterowanie_tekst" >sterowanie ręczne</span>
         <br>
         <div class="bodytext">Wypełnienie silnika 1: <span id="pwm1_wysw"></span> &mu;s</div>
         <br>
