@@ -215,11 +215,11 @@ table {
     <br>
     <div class="category">Wartości zadane</div>
     <br>
-    <div class="bodytext">Zadana wysokość: <span id="wysokosc"></span> cm</div>
+    <div class="bodytext">Zadana wysokość: <span id="wysokosc">5</span> cm</div>
     <br>
     <input type="range" class="fanrpmslider" min="5" max="40" value = "5" width = "0%" oninput="UpdateWysokosc(this.value)"/>
     <br>
-    <div class="bodytext">Zadany kąt: <span id="kat"></span> stopni</div>
+    <div class="bodytext">Zadany kąt: <span id="kat">0</span> stopni</div>
     <br>
     <input type="range" class="fanrpmslider" min="-65" max="65" value = "0" width = "0%" oninput="UpdateKat(this.value)"/>
     <br>
@@ -228,11 +228,11 @@ table {
 
     <div class="category">Ręczne sterowanie wypełnieniem PWM</div>
     <br>
-    <div class="bodytext">Zadane wypełnienie silnika 1: <span id="PWM_1"></span> &mu;s</div>
+    <div class="bodytext">Zadane wypełnienie silnika 1: <span id="PWM_1">1000</span> &mu;s</div>
     <br>
     <input type="range" class="fanrpmslider" min="1000" max="2000" value = "1000" width = "0%" id ="Pasek_PWM_1" oninput="Aktualizuj_PWM(this.value, 1)"/>
     <br>
-    <div class="bodytext">Zadane wypełnienie silnika 2: <span id="PWM_2"></span> &mu;s</div>
+    <div class="bodytext">Zadane wypełnienie silnika 2: <span id="PWM_2">1000</span> &mu;s</div>
     <br>
     <input type="range" class="fanrpmslider" min="1000" max="2000" value = "1000" width = "0%" id = "Pasek_PWM_2" oninput="Aktualizuj_PWM(this.value, 2)"/>
 
@@ -252,17 +252,17 @@ table {
               <div class = "bodytext" style = "font-size: 30px;">Regulacja wysokości</div>
               <br>
               <br>
-              <div class ="bodytext"> Współczynnik k<sub>p</sub>: <span id="Pasek_wys_kp_war"></span>  </div> 
+              <div class ="bodytext"> Współczynnik k<sub>p</sub>: <span id="Pasek_wys_kp_war">0.01</span>  </div> 
               <input type="range" class="fanrpmslider" min="0.01" max="15" value = "0.01" width = "0%" step = "0.01" id = "Pasek_wys_kp" oninput="Pasek_PID(this.id, this.value)"/>
               <br>
 
               <br>
-              <div class ="bodytext"> Współczynnik k<sub>i</sub>:  <span id="Pasek_wys_ki_war"></span>  </div> 
+              <div class ="bodytext"> Współczynnik k<sub>i</sub>:  <span id="Pasek_wys_ki_war">0.01</span>  </div> 
               <input type="range" class="fanrpmslider" min="0" max="5" value = "0.01" width = "0%" step = "0.01" id = "Pasek_wys_ki" oninput="Pasek_PID(this.id, this.value)"/>
               <br>
 
               <br>
-              <div class ="bodytext"> Współczynnik k<sub>d</sub>: <span id="Pasek_wys_kd_war"></span>   </div> 
+              <div class ="bodytext"> Współczynnik k<sub>d</sub>: <span id="Pasek_wys_kd_war">0.01</span>   </div> 
               <input type="range" class="fanrpmslider" min="0" max="5" value = "0.01" width = "0%" step = "0.01" id = "Pasek_wys_kd" oninput="Pasek_PID(this.id, this.value)"/>
               <br>
 
@@ -271,27 +271,39 @@ table {
           <div class = "bodytext" style = "font-size: 30px;">Regulacja kąta</div>
           <br>
           <br>
-          <div class ="bodytext"> Współczynnik k<sub>p</sub>: <span id="Pasek_kat_kp_war"></span>  </div> 
+          <div class ="bodytext"> Współczynnik k<sub>p</sub>: <span id="Pasek_kat_kp_war">0.01</span>  </div> 
           <input type="range" class="fanrpmslider" min="0.01" max="15" value = "0.01" width = "0%" step = "0.01" id = "Pasek_kat_kp" oninput="Pasek_PID(this.id, this.value)"/>
           <br>
 
           <br>
-          <div class ="bodytext"> Współczynnik k<sub>i</sub>:  <span id="Pasek_kat_ki_war"></span>  </div> 
+          <div class ="bodytext"> Współczynnik k<sub>i</sub>:  <span id="Pasek_kat_ki_war">0.01</span>  </div> 
           <input type="range" class="fanrpmslider" min="0" max="5" value = "0.01" width = "0%" step = "0.01" id = "Pasek_kat_ki" oninput="Pasek_PID(this.id, this.value)"/>
           <br>
 
           <br>
-          <div class ="bodytext"> Współczynnik k<sub>d</sub>: <span id="Pasek_kat_kd_war"></span>   </div> 
+          <div class ="bodytext"> Współczynnik k<sub>d</sub>: <span id="Pasek_kat_kd_war">0.01</span>   </div> 
           <input type="range" class="fanrpmslider" min="0" max="5" value = "0.01" width = "0%" step = "0.01" id = "Pasek_kat_kd" oninput="Pasek_PID(this.id, this.value)"/>
           <br>
         </div>
         <div class = "row">
           <div class = "bodytext">
+          <br>
+          <br>
         <input type="checkbox" id ="sterowanie" tryb="ręczne" oninput="Sterowanie_przycisk()" ></input>Sterowanie automatyczne
         <br>
         <br>
-        Aktualne sterowanie: <span id="Sterowanie_tekst" ></span>
+        <input type = "radio" id = "radio_wys" name = "wybor_ster" value="wys" > <label for="radio_wys" name = "wybor_ster">Sterowanie wysokością</label>
+        <input type = "radio" id = "radio_kat" name = "wybor_ster" value="kat"> <label for="radio_kat" name = "wybor_ster" >Sterowanie kątem</label>
         <br>
+        <input type = "radio" id = "radio_oba" name = "wybor_ster" value="oba"> <label for="radio_oba"  name = "wybor_ster">Sterowanie wysokością i kątem</label>
+        
+        <br>
+        <br>
+        Aktualne sterowanie: <span id="Sterowanie_tekst" >Sterowanie ręczne</span>
+        <br>
+        <div class="bodytext">Wypełnienie silnika 1: <span id="pwm1_wysw"></span> &mu;s</div>
+        <br>
+        <div class="bodytext">Wypełnienie silnika 2: <span id="pwm2_wysw"></span> &mu;s</div>
       </div>
         </div>
       </div>
@@ -525,14 +537,32 @@ table {
     }
 
     function Sterowanie_przycisk(){
+      var lista =  document.getElementsByName("wybor_ster");
+      var pudlo = document.getElementById("sterowanie");
+      var ster = document.querySelector('input[name="wybor_ster"]:checked').value;
+
+      if(pudlo.getAttribute("tryb") == "ręczne"){
+        pudlo.setAttribute("tryb", "auto");
+        document.getElementById("Sterowanie_tekst").textContent = "Sterowanie automatyczne";
+
+        lista.forEach(element => element.style.visibility = "visible");
+          }
+      
+      else if(pudlo.getAttribute("tryb") == "auto"){
+        pudlo.setAttribute("tryb", "ręczne");
+        document.getElementById("Sterowanie_tekst").textContent = "Sterowanie ręczne";
+        lista.forEach(element =>  element.style.visibility = "hidden");
+          }
+      
+      
       var xhttp = new XMLHttpRequest();
-      xhttp.onreadystatechange = function() {
-        if (this.readyState == 4 && this.status == 200) {
-          // update the web based on reply from  ESP
-          document.getElementById("Sterowanie_tekst").innerHTML=this.responseText;
-        }
-      }
-      xhttp.open("PUT", "UPDATE_STER", true);
+      // xhttp.onreadystatechange = function() {
+      //   if (this.readyState == 4 && this.status == 200) {
+      //     // update the web based on reply from  ESP
+      //     document.getElementById("Sterowanie_tekst").innerHTML=this.responseText;
+      //   }
+      // }
+      xhttp.open("PUT", "UPDATE_STER?STER="+ster, true);
       xhttp.send();
 
       return;
@@ -561,6 +591,14 @@ table {
       xmldoc = xmlResponse.getElementsByTagName("W1");
       message = xmldoc[0].firstChild.nodeValue;
       document.getElementById("wys").innerHTML = message;
+
+      xmldoc = xmlResponse.getElementsByTagName("PWM1");
+      message = xmldoc[0].firstChild.nodeValue;
+      document.getElementById("pwm1_wysw").innerHTML = message;
+
+      xmldoc = xmlResponse.getElementsByTagName("PWM2");
+      message = xmldoc[0].firstChild.nodeValue;
+      document.getElementById("pwm2_wysw").innerHTML = message;
      }
   
     // general processing code for the web page to ask for an XML steam

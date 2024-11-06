@@ -66,6 +66,8 @@ float kp_kat =1;
 float ki_kat = 1;
 float kd_kat =1;
 
+char sterowanie_tryb = 'o'; ///o - oba, k- kątem, w - wysokością
+
 
 void kalman_1d(float KalmanState, float KalmanUncertainty, float KalmanInput, float KalmanMeasurement) {
   //funkcja realizujaca filtr Kalmana
@@ -329,11 +331,17 @@ void ZmianaPWM_oba(){
 void Aktualizuj_ster(){
   
   ster_auto = !ster_auto;
-  if(ster_auto)
-    server.send(200, "text/plain", "Sterowanie automatyczne");
-  else 
-    server.send(200, "text/plain", "Sterowanie ręczne");  
 
+  String t_state = server.arg("STER");
+
+  if(t_state =="kat")
+    sterowanie_tryb ='k';
+  else if(t_state =="wys")
+    sterowanie_tryb = 'w';
+  else if (t_state == "oba")
+    sterowanie_tryb = 'o';
+
+  server.send(200, "text/plain", "");
   return;
 }
 
@@ -364,24 +372,31 @@ float zmierzOdleglosc(){
 
 void sterowanie(){
   //najpierw wysterowujemy wysokość 
-  static float e_wys;
-  static float e_wys_stary;
-  static float calka_wys;
 
-  float ster_wys =0;
+  if(sterowanie_tryb =='w' || sterowanie_tryb =='o'){
+    static float e_wys;
+    static float e_wys_stary;
+    static float calka_wys;
 
-  wysokosc = zmierzOdleglosc();
+    float ster_wys =0;
+    wysokosc = zmierzOdleglosc();
 
-  e_wys = wysokosc_zadana - wysokosc;
-  ster_wys = PID(kp_wys, ki_wys, kd_wys, e_wys, e_wys_stary, &calka_wys);
-  e_wys_stary = e_wys;
+    e_wys = wysokosc_zadana - wysokosc;
+    ster_wys = PID(kp_wys, ki_wys, kd_wys, e_wys, e_wys_stary, &calka_wys);
+    e_wys_stary = e_wys;
+    pwm_1_zadany = pwm_2_zadany = map(ster_wys, 0, 100, 1000, 2000);
+  }
 
+
+
+  if(sterowanie_tryb == 'k' || sterowanie_tryb =='o'){
   static float e_kat;
   static float e_kat_stary;
   static float calka_kat;
 
   float ster_kat =0;   //dodatni uchyb - chcemy żeby podniósł się LANRC35A 
                       /// czyli silnik1 musi byc podpięty do lanrc2
+
   e_kat = kat_zadany -KalmanAngleRoll;
   //e_kat = 0;
   ster_kat = PID(kp_kat, ki_kat, kd_kat, e_kat, e_kat_stary, &calka_kat);
@@ -389,10 +404,11 @@ void sterowanie(){
   //e_kat_stary = 0;
 
   int delta_ster_kat = ster_kat * 0.8;
-  pwm_1_zadany = pwm_2_zadany = map(ster_wys, 0, 100, 1000, 2000);
 
   pwm_1_zadany +=delta_ster_kat;
   pwm_2_zadany -= delta_ster_kat;
+  
+  }
 
   if(pwm_1_zadany<1000)
     pwm_1_zadany =1000;

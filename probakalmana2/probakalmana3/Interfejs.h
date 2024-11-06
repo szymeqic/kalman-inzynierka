@@ -289,10 +289,19 @@ table {
         </div>
         <div class = "row">
           <div class = "bodytext">
+          <br>
+          <br>
         <input type="checkbox" id ="sterowanie" tryb="ręczne" oninput="Sterowanie_przycisk()" ></input>Sterowanie automatyczne
         <br>
         <br>
-        Aktualne sterowanie: <span id="Sterowanie_tekst" >sterowanie ręczne</span>
+        <input type = "radio" id = "radio_wys" name = "wybor_ster" value="wys" > <label for="radio_wys" name = "wybor_ster">Sterowanie wysokością</label>
+        <input type = "radio" id = "radio_kat" name = "wybor_ster" value="kat"> <label for="radio_kat" name = "wybor_ster" >Sterowanie kątem</label>
+        <br>
+        <input type = "radio" id = "radio_oba" name = "wybor_ster" value="oba"> <label for="radio_oba"  name = "wybor_ster">Sterowanie wysokością i kątem</label>
+        
+        <br>
+        <br>
+        Aktualne sterowanie: <span id="Sterowanie_tekst" >Sterowanie ręczne</span>
         <br>
         <div class="bodytext">Wypełnienie silnika 1: <span id="pwm1_wysw"></span> &mu;s</div>
         <br>
@@ -530,14 +539,32 @@ table {
     }
 
     function Sterowanie_przycisk(){
+      var lista =  document.getElementsByName("wybor_ster");
+      var pudlo = document.getElementById("sterowanie");
+      var ster = document.querySelector('input[name="wybor_ster"]:checked').value;
+
+      if(pudlo.getAttribute("tryb") == "ręczne"){
+        pudlo.setAttribute("tryb", "auto");
+        document.getElementById("Sterowanie_tekst").textContent = "Sterowanie automatyczne";
+
+        lista.forEach(element => element.style.visibility = "visible");
+          }
+      
+      else if(pudlo.getAttribute("tryb") == "auto"){
+        pudlo.setAttribute("tryb", "ręczne");
+        document.getElementById("Sterowanie_tekst").textContent = "Sterowanie ręczne";
+        lista.forEach(element =>  element.style.visibility = "hidden");
+          }
+      
+      
       var xhttp = new XMLHttpRequest();
-      xhttp.onreadystatechange = function() {
-        if (this.readyState == 4 && this.status == 200) {
-          // update the web based on reply from  ESP
-          document.getElementById("Sterowanie_tekst").innerHTML=this.responseText;
-        }
-      }
-      xhttp.open("PUT", "UPDATE_STER", true);
+      // xhttp.onreadystatechange = function() {
+      //   if (this.readyState == 4 && this.status == 200) {
+      //     // update the web based on reply from  ESP
+      //     document.getElementById("Sterowanie_tekst").innerHTML=this.responseText;
+      //   }
+      // }
+      xhttp.open("PUT", "UPDATE_STER?STER="+ster, true);
       xhttp.send();
 
       return;
