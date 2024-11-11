@@ -464,36 +464,47 @@ float PID(float kp, float ki, float kd, float e, float e_stary, float* calka) {
 
 void Sterowanie1(){
 
-  if (kat_zadany >= 0){
-    odwrocenie = false;
-    kat_zadany1 = (float) kat_zadany;
-  }
-  else if (kat_zadany < 0){
-    odwrocenie = true;
-    kat_zadany1 = (float) kat_zadany * (-1);
-  }
+  kat_zadany1 = (float) kat_zadany;
 
   uchyb = kat_zadany1 - kat_stary;
   F1 = 0.02 * uchyb + 1.082 * x2;
-  if (F1 > 15){
-    F1 = 15;
+  if (F1 > 14){
+    F1 = 14;
   }
-  else if (F1 < 0){
-    F1 = 0;
+  else if (F1 < -14){
+    F1 = -14;
   }
   F2 = -0.02 * uchyb + 1.171 * x2;
-  if (F2 > 15){
-    F2 = 15;
+  if (F2 > 14){
+    F2 = 14;
   }
-  else if (F2 < 0){
-    F2 = 0;
+  else if (F2 < -14){
+    F2 = -14;
   }
-  pwm_1_zadany = -1.8623 * F1 * F1 + 96.6731 * F1 + 1071.87;
-  pwm_2_zadany = -1.8623 * F2 * F2 + 96.6731 * F2 + 1071.87;
+  pwm_1_zadany = -1.8623 * abs(F1) * abs(F1) + 96.6731 * abs(F1) + 1071.87;
+  pwm_2_zadany = -1.8623 * abs(F2) * abs(F2) + 96.6731 * abs(F2) + 1071.87;
+  if (pwm_1_zadany < 1000){
+    pwm_1_zadany = 1000;
+  }
+  else if (pwm_1_zadany > 2000){
+    pwm_1_zadany = 2000;
+  }
+  if (pwm_2_zadany < 1000){
+    pwm_2_zadany = 1000;
+  }
+  else if (pwm_2_zadany > 2000){
+    pwm_2_zadany = 2000;
+  }
   x1 = KalmanAngleRoll;
   x2 = (x1 - kat_stary) / 0.004;
   kat_stary = x1;
 
+  if (F1 > 0 || F2 > 0){
+    odwrocenie = false;
+  }
+  else if (F1 < 0 && F2 < 0){
+    odwrocenie = true;
+  }
   if (!odwrocenie){
     Silnik1.writeMicroseconds(pwm_1_zadany);
     Silnik2.writeMicroseconds(pwm_2_zadany);
