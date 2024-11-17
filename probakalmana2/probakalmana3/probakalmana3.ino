@@ -1,4 +1,6 @@
+#include <i2cdetect.h>
 
+#include <MPU6050.h>
 #include <Wire.h>
 #include <ESP8266WiFi.h>
 #include <WiFiClient.h>
@@ -21,6 +23,7 @@ uint32_t LoopTimer;
 float KalmanAngleRoll = 0, KalmanUncertaintyAngleRoll = 1 * 1;
 float KalmanAnglePitch = 0, KalmanUncertaintyAnglePitch = 1 * 1;
 float Kalman1DOutput[] = { 0, 0 };
+
 
 const char* ssid = "Filtr Kalmana";  //nazwa sieci utworzonej przez esp8266
 const char* password = "ilovekalmanfilter";
@@ -60,9 +63,9 @@ bool test_odbioru_danych = false;
 Servo Silnik1;
 Servo Silnik2;
 
-const float u_min = -100;    //0% mocy silnika
-const float u_max = 100;  //100% silnika
-const float ts = 0.2;     //czas probkowania (mysle ze co 50ms wystarczy)
+const float u_min = -100;  //0% mocy silnika
+const float u_max = 100;   //100% silnika
+const float ts = 0.2;      //czas probkowania (mysle ze co 50ms wystarczy)
 
 float kp_wys = 1;
 float ki_wys = 1;
@@ -72,7 +75,7 @@ float kp_kat = 1;
 float ki_kat = 1;
 float kd_kat = 0;
 
-char sterowanie_tryb = 'o'; ///o - oba, k- kątem, w - wysokością
+char sterowanie_tryb = 'o';  ///o - oba, k- kątem, w - wysokością
 
 float uchyb = 0;
 float kat_stary = 0;
@@ -84,66 +87,65 @@ float x2 = 0;
 bool odwrocenie = false;
 
 
+MPU6050 mpu;
+#define OUTPUT_READABLE_ACCELGYRO
+int16_t ax, ay, az;
+int16_t gx, gy, gz;
+
+
 void kalman_1d(float KalmanState, float KalmanUncertainty, float KalmanInput, float KalmanMeasurement) {
   //funkcja realizujaca filtr Kalmana
-  KalmanState = KalmanState + 0.004 * KalmanInput;                             //nowa predykcja kata
-  KalmanUncertainty = KalmanUncertainty + 0.004 * 0.004 * 1 * 1;               //niepewnosc predykcji (4 * 4 - wariancja pomiarow zyroskopu)
+  //uwaga
+  static bool roll = true;
+  static float ts_roll, ts_pitch = 0;
+  static long t_minal_roll =micros(), t_minal_pitch = micros();
+
+  if(roll){
+    ts_roll = (micros() - t_minal_roll)/1000000.0; //podzielic
+    t_minal_roll = micros();
+  }
+  else{
+    ts_pitch = (micros() - t_minal_pitch)/1000000.0; //podzielic
+    t_minal_pitch = micros();
+
+  }
+
+  KalmanState = KalmanState + ts * KalmanInput;                             //nowa predykcja kata
+  KalmanUncertainty = KalmanUncertainty + ts * ts * 1 * 1;               //niepewnosc predykcji (4 * 4 - wariancja pomiarow zyroskopu)
   float KalmanGain = KalmanUncertainty * 1 / (1 * KalmanUncertainty + 1 * 1);  //wzmocnienie Kalmana - od niego zalezy, jak wazne sa pomiary, a jak wazna predykcja (3 * 3 - wariancja pomiarow akcelerometru)
   KalmanState = KalmanState + KalmanGain * (KalmanMeasurement - KalmanState);  //kolejna predykcja kata (na podstawie wzmocnienia Kalmana)
   KalmanUncertainty = (1 - KalmanGain) * KalmanUncertainty;                    //niepewnosc kolejnej predykcji
   Kalman1DOutput[0] = KalmanState;
   Kalman1DOutput[1] = KalmanUncertainty;
-}
-void gyro_signals(void) {
-  //wpisanie do rejestru informacji o czestotliwosci odciecia filtru dolnopasmowego (5 Hz)
 
-  Wire.beginTransmission(0x68);
-  Wire.write(0x1A);
-  Wire.write(0x05);
-  Wire.endTransmission();
-  //wpisanie do rejestru informacji o zakresie pomiarowym akcelerometru (+/- 8g)
-  Wire.beginTransmission(0x68);
-  Wire.write(0x1C);
-  Wire.write(0x10);
-  Wire.endTransmission();
-  //ustalenie pierwszego z rejestrow, z ktorych dane beda pobierane
-  Wire.beginTransmission(0x68);
-  Wire.write(0x3B);
-  Wire.endTransmission();
-  Wire.requestFrom(0x68, 6);                         //żądanie 6 bajtow z mpu5060 (kazda z osi to 2 bajty danych)
-  int16_t AccXLSB = Wire.read() << 8 | Wire.read();  //odczytanie dwoch rejestrow z danymi
-  int16_t AccYLSB = Wire.read() << 8 | Wire.read();
-  int16_t AccZLSB = Wire.read() << 8 | Wire.read();
-  //wpisanie do rejestru informacji o zakresie pomiarowym i rozdzielczosci bitowej zyroskopu
-  //(+/- 500 °/s, 65,5 LSB/°/s)
-  Wire.beginTransmission(0x68);
-  Wire.write(0x1B);
-  Wire.write(0x8);
-  Wire.endTransmission();
-  //ustalenie pierwszego z rejestrow, z ktorych dane beda pobierane
-  Wire.beginTransmission(0x68);
-  Wire.write(0x43);
-  Wire.endTransmission();
-  Wire.requestFrom(0x68, 6);                       //żądanie 6 bajtow z mpu5060 (kazda z osi to 2 bajty danych)
-  int16_t GyroX = Wire.read() << 8 | Wire.read();  //odczytanie dwoch rejestrow z danymi
-  int16_t GyroY = Wire.read() << 8 | Wire.read();
-  int16_t GyroZ = Wire.read() << 8 | Wire.read();
-  RateRoll = (float)GyroX / 65.5;  //prawdziwa predkosc po podzieleniu przez ustalona rozdzielczosc bitowa
-  RatePitch = (float)GyroY / 65.5;
-  RateYaw = (float)GyroZ / 65.5;
-  AccX = (float)AccXLSB / 4096 - 0.04;  // wartosci sluza do kalibracji akcelerometru
-  AccY = (float)AccYLSB / 4096;
-  AccZ = (float)AccZLSB / 4096 - 0.11;
+  roll = !roll;
+}
+void gyro_signals() {
+
+  mpu.getMotion6(&ax, &ay, &az, &gx, &gy, &gz);
+
+  RateRoll = (float)gx / 65.5;  //prawdziwa predkosc po podzieleniu przez ustalona rozdzielczosc bitowa
+  RatePitch = (float)gy / 65.5;
+  RateYaw = (float)gz / 65.5;
+
+  AccX = (float)ax / 4096 - 0.04;  // wartosci sluza do kalibracji akcelerometru
+  AccY = (float)ay / 4096;
+  AccZ = (float)az / 4096 - 0.11;
+
   AngleRoll = atan(AccY / sqrt(AccX * AccX + AccZ * AccZ)) * 1 / (3.142 / 180);
   AnglePitch = -atan(AccX / sqrt(AccY * AccY + AccZ * AccZ)) * 1 / (3.142 / 180);
+
+
+  //równanie do 2 miejsc po przecinku
+  //AngleRoll = int(AngleRoll);// + (int(AngleRoll*10) - int(AngleRoll)*10)/10;
+  //AnglePitch= int(AnglePitch);// + (int(AnglePitch*10) - int(AnglePitch)*10)/10;
 }
 
 
 
-bool watchdog_ts() {
+bool watchdog_ts(long milisek) {
   static long czas = 0;
   static long czas_stary = 0;
-  const static long milisek = 200000;
 
   czas = micros();
   if (czas - czas_stary > milisek) {
@@ -161,10 +163,10 @@ void SendXML() {
 
   strcpy(XML, "<?xml version = '1.0'?>\n<Data>\n");
 
-  sprintf(buf, "<X1>%d,%d</X1>\n", (int)(KalmanAngleRoll), abs((int)(KalmanAngleRoll * 10) - ((int)(KalmanAngleRoll)*10)));
+  sprintf(buf, "<X1>%d,%d</X1>\n", (int)(KalmanAngleRoll),  abs((int)(KalmanAngleRoll * 100) - ((int)(KalmanAngleRoll)*100)));
   strcat(XML, buf);
 
-  sprintf(buf, "<Y1>%d,%d</Y1>\n", (int)(KalmanAnglePitch), abs((int)(KalmanAnglePitch * 10) - ((int)(KalmanAnglePitch)*10)));
+  sprintf(buf, "<Y1>%d,%d</Y1>\n", (int)(KalmanAnglePitch),  abs((int)(KalmanAnglePitch * 100) - ((int)(KalmanAnglePitch)*100)));
   strcat(XML, buf);
 
   sprintf(buf, "<W1>%d,%d</W1>\n", (int)(wysokosc), abs((int)(wysokosc * 100) - ((int)(wysokosc)*100)));
@@ -355,9 +357,9 @@ void Aktualizuj_ster() {
 
   String t_state = server.arg("STER");
 
-  if(t_state =="kat")
-    sterowanie_tryb ='k';
-  else if(t_state =="wys")
+  if (t_state == "kat")
+    sterowanie_tryb = 'k';
+  else if (t_state == "wys")
     sterowanie_tryb = 'w';
   else if (t_state == "oba")
     sterowanie_tryb = 'o';
@@ -367,39 +369,24 @@ void Aktualizuj_ster() {
 }
 
 float zmierzOdleglosc() {
-  /*float czas =0;
-  //float temp =micros();
-  digitalWrite(PIN_TRIG, LOW);
-  delayMicroseconds(2);
-  digitalWrite(PIN_TRIG, HIGH);
-  delayMicroseconds(10);
-  digitalWrite(PIN_TRIG,LOW);
-  
-  //temp = micros() - temp;
 
-  czas = pulseIn(PIN_ECHO, HIGH, 50000);    /// na 400000 działa xsss
-  //Serial.println(czas);
-  //Serial.println(0);
-  //return temp;
 
-  return czas/58;*/
-
-  if(lox.isRangeComplete()){
-  wysokosc = (float)lox.readRange();
+  if (lox.isRangeComplete()) {
+    wysokosc = (float)lox.readRange();
+    return wysokosc / 10;
   }
-
-  return wysokosc / 10;
+  return wysokosc;
 }
 
 void sterowanie() {
-  //najpierw wysterowujemy wysokość 
+  //najpierw wysterowujemy wysokość
 
-  if(sterowanie_tryb =='w' || sterowanie_tryb =='o'){
+  if (sterowanie_tryb == 'w' || sterowanie_tryb == 'o') {
     static float e_wys;
     static float e_wys_stary;
     static float calka_wys;
 
-    float ster_wys =0;
+    float ster_wys = 0;
     wysokosc = zmierzOdleglosc();
 
     e_wys = wysokosc_zadana - wysokosc;
@@ -410,38 +397,37 @@ void sterowanie() {
 
 
 
-  if(sterowanie_tryb == 'k' || sterowanie_tryb =='o'){
-  static float e_kat;
-  static float e_kat_stary;
-  static float calka_kat;
+  if (sterowanie_tryb == 'k' || sterowanie_tryb == 'o') {
+    static float e_kat;
+    static float e_kat_stary;
+    static float calka_kat;
 
-  float ster_kat =0;   //dodatni uchyb - chcemy żeby podniósł się LANRC35A 
-                      /// czyli silnik1 musi byc podpięty do lanrc2
+    float ster_kat = 0;  //dodatni uchyb - chcemy żeby podniósł się LANRC35A
+                         /// czyli silnik1 musi byc podpięty do lanrc2
 
-  e_kat = kat_zadany -KalmanAngleRoll;
-  //e_kat = 0;
-  ster_kat = PID(kp_kat, ki_kat, kd_kat, e_kat, e_kat_stary, &calka_kat);
-  e_kat_stary = e_kat;
-  //e_kat_stary = 0;
+    e_kat = kat_zadany - KalmanAngleRoll;
+    //e_kat = 0;
+    ster_kat = PID(kp_kat, ki_kat, kd_kat, e_kat, e_kat_stary, &calka_kat);
+    e_kat_stary = e_kat;
+    //e_kat_stary = 0;
 
-  int delta_ster_kat = ster_kat * 0.8;
+    int delta_ster_kat = ster_kat * 0.8;
 
-  pwm_1_zadany +=delta_ster_kat;
-  pwm_2_zadany -= delta_ster_kat;
-  
+    pwm_1_zadany += delta_ster_kat;
+    pwm_2_zadany -= delta_ster_kat;
   }
 
-  if(pwm_1_zadany<1000)
-    pwm_1_zadany =1000;
-  
-  if(pwm_1_zadany >2000)
-    pwm_1_zadany =2000;
+  if (pwm_1_zadany < 1000)
+    pwm_1_zadany = 1000;
 
-    if(pwm_2_zadany<1000)
-    pwm_2_zadany =1000;
-  
-  if(pwm_2_zadany >2000)
-    pwm_2_zadany =2000;
+  if (pwm_1_zadany > 2000)
+    pwm_1_zadany = 2000;
+
+  if (pwm_2_zadany < 1000)
+    pwm_2_zadany = 1000;
+
+  if (pwm_2_zadany > 2000)
+    pwm_2_zadany = 2000;
 }
 
 float PID(float kp, float ki, float kd, float e, float e_stary, float* calka) {
@@ -462,60 +448,70 @@ float PID(float kp, float ki, float kd, float e, float e_stary, float* calka) {
   return u;
 }
 
-void Sterowanie1(){
+void Sterowanie1() {
 
-  kat_zadany1 = (float) kat_zadany;
+
+
+  static float ts = 0;
+  static long t_minal =micros();
+  ts = (micros() - t_minal)/1000000.0; //podzielic
+  t_minal = micros();
+
+  kat_zadany1 = (float)kat_zadany;
 
   uchyb = kat_zadany1 - kat_stary;
-  F1 = 0.02 * uchyb + 1.082 * x2;
-  if (F1 > 14){
-    F1 = 14;
-  }
-  else if (F1 < -14){
-    F1 = -14;
-  }
-  F2 = -0.02 * uchyb + 1.171 * x2;
-  if (F2 > 14){
-    F2 = 14;
-  }
-  else if (F2 < -14){
-    F2 = -14;
-  }
-  pwm_1_zadany = -1.8623 * abs(F1) * abs(F1) + 96.6731 * abs(F1) + 1071.87;
-  pwm_2_zadany = -1.8623 * abs(F2) * abs(F2) + 96.6731 * abs(F2) + 1071.87;
-  if (pwm_1_zadany < 1000){
-    pwm_1_zadany = 1000;
-  }
-  else if (pwm_1_zadany > 2000){
-    pwm_1_zadany = 2000;
-  }
-  if (pwm_2_zadany < 1000){
-    pwm_2_zadany = 1000;
-  }
-  else if (pwm_2_zadany > 2000){
-    pwm_2_zadany = 2000;
-  }
-  x1 = KalmanAngleRoll;
-  x2 = (x1 - kat_stary) / 0.004;
-  kat_stary = x1;
+  //if (abs(uchyb) > 1) {
+    F1 = 0.02 * uchyb + 1.082 * x2;
+    if (F1 > 14) {
+      F1 = 14;
+    } else if (F1 < -14) {
+      F1 = -14;
+    }
+    F2 = -0.02 * uchyb + 1.171 * x2;
+    if (F2 > 14) {
+      F2 = 14;
+    } else if (F2 < -14) {
+      F2 = -14;
+    }
+    pwm_1_zadany = -1.8623 * abs(F1) * abs(F1) + 96.6731 * abs(F1) + 1071.87;
+    pwm_2_zadany = -1.8623 * abs(F2) * abs(F2) + 96.6731 * abs(F2) + 1071.87;
 
-  if (F1 > 0 || F2 > 0){
-    odwrocenie = false;
-  }
-  else if (F1 < 0 && F2 < 0){
-    odwrocenie = true;
-  }
-  if (!odwrocenie){
-    Silnik1.writeMicroseconds(pwm_1_zadany);
-    Silnik2.writeMicroseconds(pwm_2_zadany);
-  }
-  else if (odwrocenie){
-    Silnik1.writeMicroseconds(pwm_2_zadany);
-    Silnik2.writeMicroseconds(pwm_1_zadany);
-  }
+    pwm_1_zadany = map(pwm_1_zadany, 1000, 2000, 0, 100);
+    pwm_2_zadany = map(pwm_2_zadany, 1000, 2000, 0, 100);
+
+  /*
+    if (pwm_1_zadany < 1000) {
+      pwm_1_zadany = 1000;
+    } else if (pwm_1_zadany > 1200) {
+      pwm_1_zadany = 1200;
+    }
+    if (pwm_2_zadany < 1000) {
+      pwm_2_zadany = 1000;
+    } else if (pwm_2_zadany > 1200) {
+      pwm_2_zadany = 1200;
+    }
+    */
+
+    x1 = int(KalmanAngleRoll) + (int(KalmanAngleRoll*10) - int(KalmanAngleRoll)*10)/10.0;
+    x2 = (x1 - kat_stary) / ts;
+    kat_stary = x1;
+
+    if (F1 > 0 || F2 > 0) {
+      odwrocenie = false;
+    } else if (F1 < 0 && F2 < 0) {
+      odwrocenie = true;
+    }
+    if (!odwrocenie) {
+      Silnik1.writeMicroseconds(pwm_1_zadany);
+      Silnik2.writeMicroseconds(pwm_2_zadany);
+    } else if (odwrocenie) {
+      Silnik1.writeMicroseconds(pwm_2_zadany);
+      Silnik2.writeMicroseconds(pwm_1_zadany);
+    }
+  //}
 }
 
-void WireReset(){
+void WireReset() {
   Wire.setClock(400000);  //czestotliwosc zegara - 400 kHz
   Serial.println("sss");
   Wire.begin();
@@ -552,14 +548,34 @@ void WireReset(){
 
 void loop() {
 
+  gyro_signals();
+  RateRoll -= RateCalibrationRoll;  //poprawka o wartosci kalibracyjne
+  RatePitch -= RateCalibrationPitch;
+  RateYaw -= RateCalibrationYaw;
+
+  //roll
+  kalman_1d(KalmanAngleRoll, KalmanUncertaintyAngleRoll, RateRoll, AngleRoll);
+  KalmanAngleRoll = Kalman1DOutput[0];
+  KalmanUncertaintyAngleRoll = Kalman1DOutput[1];
+  
+
+  //pitch
+  kalman_1d(KalmanAnglePitch, KalmanUncertaintyAnglePitch, RatePitch, AnglePitch);
+  KalmanAnglePitch = Kalman1DOutput[0];
+  KalmanUncertaintyAnglePitch = Kalman1DOutput[1];
+  //KalmanAnglePitch =int(KalmanAnglePitch) + (int(KalmanAnglePitch*10) - int(KalmanAnglePitch)*10)/10.0
 
 
-  if (watchdog_ts() && ster_auto) {
-    wysokosc = zmierzOdleglosc();
-    //sterowanie();
-    Silnik1.writeMicroseconds(pwm_1_zadany);
-    Silnik2.writeMicroseconds(pwm_2_zadany);
+  if (watchdog_ts(20000)) {
+
+    if (lox.isRangeComplete())
+      wysokosc = lox.readRange();
   }
+
+  if (ster_auto) {
+    Sterowanie1();
+  }
+
   if (kalibracja) {
     RateCalibrationRoll = 0;
     RateCalibrationPitch = 0;
@@ -577,16 +593,6 @@ void loop() {
     kalibracja = false;
   }
 
-  gyro_signals();
-  RateRoll -= RateCalibrationRoll;  //poprawka o wartosci kalibracyjne
-  RatePitch -= RateCalibrationPitch;
-  RateYaw -= RateCalibrationYaw;
-  kalman_1d(KalmanAngleRoll, KalmanUncertaintyAngleRoll, RateRoll, AngleRoll);
-  KalmanAngleRoll = Kalman1DOutput[0];
-  KalmanUncertaintyAngleRoll = Kalman1DOutput[1];
-  kalman_1d(KalmanAnglePitch, KalmanUncertaintyAnglePitch, RatePitch, AnglePitch);
-  KalmanAnglePitch = Kalman1DOutput[0];
-  KalmanUncertaintyAnglePitch = Kalman1DOutput[1];
   //Serial.print("Roll Angle [°] ");
   //Serial.print(KalmanAngleRoll);
   //Serial.print(RateRoll);
@@ -594,7 +600,7 @@ void loop() {
   //Serial.println(RatePitch);
   //Serial.println(KalmanAnglePitch);
 
-  if(test_odbioru_danych){
+  if (test_odbioru_danych) {
     Serial.println("Regulator wysokosci: ");
     Serial.print("Wzmocnienie członu proporcjonalnego: ");
     Serial.println(kp_wys);
@@ -620,13 +626,35 @@ void loop() {
 void setup() {
   delay(1000);
   Serial.begin(9600);
+  Wire.begin();
+  Wire.setTimeout(1000);
   Serial.println();
+  i2cdetect();
+
+  Serial.println("Initializing MPU...");
+  mpu.initialize();
+  Serial.println("Testing MPU6050 connection...");
+  delay(500);
+  while (mpu.testConnection() == false) {
+    Serial.println("MPU6050 connection failed");
+    delay(1000);
+  }
+
+  Serial.println("MPU6050 connection successful");
+  delay(1000);
+
+  while (!lox.begin()) {
+    Serial.println("nie udalo sie zbootowac czujnika wysokosci");
+    delay(1500);
+  }
+
   //tworzenie sieci bezprzewodowej z mikrokontrolera
   Serial.println("Konfugiracja access pointa...");
   WiFi.softAP(ssid, password);
   IPAddress myIP = WiFi.softAPIP();
   Serial.print("Adres IP AP: ");
   Serial.println(myIP);
+  delay(200);
   server.on("/", SendWebsite);  //'wrzucenie' na serwer strony z danymi
   server.on("/xml", SendXML);
   server.on("/UPDATE_WYSOKOSC", UpdateWysokosc);
@@ -640,19 +668,21 @@ void setup() {
   server.on("/TEST_WYS", Test_wysylania_danych);
   server.on("/WIRE_RESET", WireReset);
   server.begin();
+  delay(800);
   Serial.println("Serwer HTTP wystartował");
-  Serial.println("aaasd");
+
+
   //Serial.begin(57600);
   //pinMode(13, OUTPUT);
   //digitalWrite(13, HIGH);
 
-  Wire.setClock(400000);  //czestotliwosc zegara - 400 kHz
+  /*Wire.setClock(400000);  //czestotliwosc zegara - 400 kHz
   Serial.println("sss");
   Wire.begin();
   Serial.println("ccc");
   delay(1000);
 
-  delay(250);
+  //delay(250);
   Serial.println(micros());
   //wlaczenie zyroskopu
   Wire.beginTransmission(0x68);
@@ -666,6 +696,8 @@ void setup() {
 
   //ustalenie wartości kalibracyjnych
   //2000 pomiarów, w których mpu5060 powinno leżeć na płaskim podłożu
+
+  */
   for (RateCalibrationNumber = 0; RateCalibrationNumber < 2000; RateCalibrationNumber++) {
     gyro_signals();
     RateCalibrationRoll += RateRoll;
@@ -679,20 +711,11 @@ void setup() {
   RateCalibrationPitch /= 2000;
   RateCalibrationYaw /= 2000;
 
-  if (!lox.begin()) {
-    Serial.println("nie udalo sie zbootowac czujnika wysokosci");
-    while (1)
-      delay(10);
-  }
 
   Silnik1.attach(PIN_SILNIK1);
   Silnik2.attach(PIN_SILNIK2);
 
+
+
   lox.startRangeContinuous();
-
-
-
-  pinMode(PIN_ECHO, INPUT);
-  pinMode(PIN_TRIG, OUTPUT);
-  digitalWrite(PIN_TRIG, LOW);
 }
