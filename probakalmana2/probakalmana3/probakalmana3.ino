@@ -65,14 +65,14 @@ Servo Silnik2;
 
 const float u_min = -100;  //0% mocy silnika
 const float u_max = 100;   //100% silnika
-const float ts = 0.2;      //czas probkowania (mysle ze co 50ms wystarczy)
+//const float ts = 0.2;      //czas probkowania (mysle ze co 50ms wystarczy)
 
-float kp_wys = 1;
-float ki_wys = 1;
+float kp_wys = 0.01;
+float ki_wys = 0.01;
 float kd_wys = 0;
 
-float kp_kat = 1;
-float ki_kat = 1;
+float kp_kat = 0.01;
+float ki_kat = 0.01;
 float kd_kat = 0;
 
 char sterowanie_tryb = 'o';  ///o - oba, k- kątem, w - wysokością
@@ -96,6 +96,12 @@ int16_t gx, gy, gz;
 void kalman_1d(float KalmanState, float KalmanUncertainty, float KalmanInput, float KalmanMeasurement) {
   //funkcja realizujaca filtr Kalmana
   //uwaga
+
+  static float ts = 0;
+  static long t_minal =micros();
+  ts = (micros() - t_minal)/1000000.0; //podzielic
+  t_minal = micros();
+
   static bool roll = true;
   static float ts_roll, ts_pitch = 0;
   static long t_minal_roll =micros(), t_minal_pitch = micros();
@@ -381,6 +387,13 @@ float zmierzOdleglosc() {
 void sterowanie() {
   //najpierw wysterowujemy wysokość
 
+  static float ts = 0;
+  static long t_minal =micros();
+  ts = (micros() - t_minal)/1000000.0; //podzielic
+  t_minal = micros();
+
+
+  /*
   if (sterowanie_tryb == 'w' || sterowanie_tryb == 'o') {
     static float e_wys;
     static float e_wys_stary;
@@ -395,9 +408,9 @@ void sterowanie() {
     pwm_1_zadany = pwm_2_zadany = map(ster_wys, 0, 100, 1000, 2000);
   }
 
+  */
 
-
-  if (sterowanie_tryb == 'k' || sterowanie_tryb == 'o') {
+  if (sterowanie_tryb == 'k' || sterowanie_tryb == 'o' || true) {
     static float e_kat;
     static float e_kat_stary;
     static float calka_kat;
@@ -407,16 +420,27 @@ void sterowanie() {
 
     e_kat = kat_zadany - KalmanAngleRoll;
     //e_kat = 0;
-    ster_kat = PID(kp_kat, ki_kat, kd_kat, e_kat, e_kat_stary, &calka_kat);
+    ster_kat = PID(kp_kat, ki_kat, kd_kat, e_kat, e_kat_stary, &calka_kat, ts);
     e_kat_stary = e_kat;
     //e_kat_stary = 0;
 
-    int delta_ster_kat = ster_kat * 0.8;
+    if(ster_kat>0){
+      pwm_1_zadany = (int)ster_kat;
+      pwm_2_zadany =0;
+      }
+    else if (ster_kat<0){
+      pwm_2_zadany = (int)-ster_kat;
+      pwm_1_zadany = 0;
+      }
 
-    pwm_1_zadany += delta_ster_kat;
-    pwm_2_zadany -= delta_ster_kat;
+    pwm_1_zadany*=10;
+    pwm_1_zadany+=1000;
+
+    pwm_2_zadany*=10;
+    pwm_2_zadany+=1000;
+
   }
-
+ 
   if (pwm_1_zadany < 1000)
     pwm_1_zadany = 1000;
 
@@ -428,11 +452,13 @@ void sterowanie() {
 
   if (pwm_2_zadany > 2000)
     pwm_2_zadany = 2000;
+   
 }
 
-float PID(float kp, float ki, float kd, float e, float e_stary, float* calka) {
-  *calka = *calka + e * ts;
-  float pochodna = (e - e_stary) / ts;
+float PID(float kp, float ki, float kd, float e, float e_stary, float* calka, float ts_PID) {
+
+  *calka = *calka + e * ts_PID;
+  float pochodna = (e - e_stary) / ts_PID;
   float u = kp * e + ki * (*calka) + kd * pochodna;  //bez sprawdzenia predkosci
 
   if (u > u_max) {
@@ -444,6 +470,8 @@ float PID(float kp, float ki, float kd, float e, float e_stary, float* calka) {
     u = u_min;
     *calka = (u_min - kp * e - kd * pochodna) / ki;
   }
+
+  
 
   return u;
 }
@@ -573,7 +601,7 @@ void loop() {
   }
 
   if (ster_auto) {
-    Sterowanie1();
+    sterowanie();
   }
 
   if (kalibracja) {
