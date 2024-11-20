@@ -292,6 +292,11 @@ table {
           <div class = "bodytext">
           <br>
           <br>
+          <div class="bodytext">współczynnik mocy <span id="wsp_mocy_tekst">30</span> %</div>
+          <input type="range" class="fanrpmslider" min="0" max="100" value = "30" width = "0%"  id = "Pasek_wsp_moc" oninput="Pasek_moc(this.value)"/>
+          <br>
+          <br>
+          <br>
         <input type="checkbox" id ="sterowanie" tryb="ręczne" oninput="Sterowanie_przycisk()" ></input>Sterowanie automatyczne
         <br>
         <br>
@@ -335,81 +340,7 @@ table {
     }
 
 
-    /*
-    function KalibracjaSilnika1() {
-      var xhttp = new XMLHttpRequest(); 
-      if (document.getElementById("kalibracja_silnika1").innerHTML == "Podaj najmniejszy PWM silnika 1"){
-        xhttp.onreadystatechange = function() {
-        if (this.readyState == 4 && this.status == 200) {
-          document.getElementById("kalibracja_silnika1").innerHTML = "Podaj największy PWM silnika 1";
-        }
-      }
-      
-      xhttp.open("PUT", "BUTTON_PWM_MIN1", false);
-      xhttp.send(); 
-      }
 
-      else if (document.getElementById("kalibracja_silnika1").innerHTML == "Podaj największy PWM silnika 1"){
-        xhttp.onreadystatechange = function() {
-        if (this.readyState == 4 && this.status == 200) {
-          document.getElementById("kalibracja_silnika1").innerHTML = "Podaj zerowy PWM silnika 1";
-        }
-      }
-      
-      xhttp.open("PUT", "BUTTON_PWM_MAX1", false);
-      xhttp.send(); 
-      }
-
-      else if (document.getElementById("kalibracja_silnika1").innerHTML == "Podaj zerowy PWM silnika 1"){
-        xhttp.onreadystatechange = function() {
-        if (this.readyState == 4 && this.status == 200) {
-          document.getElementById("kalibracja_silnika1").innerHTML = "Podaj najmniejszy PWM silnika 1";
-        }
-      }
-      
-      xhttp.open("PUT", "BUTTON_PWM_ZERO1", false);
-      xhttp.send(); 
-      }
-
-    }
-
-    function KalibracjaSilnika2() {
-      var xhttp = new XMLHttpRequest(); 
-      if (document.getElementById("kalibracja_silnika2").innerHTML == "Podaj najmniejszy PWM silnika 2"){
-        xhttp.onreadystatechange = function() {
-        if (this.readyState == 4 && this.status == 200) {
-          document.getElementById("kalibracja_silnika2").innerHTML = "Podaj największy PWM silnika 2";
-        }
-      }
-      
-      xhttp.open("PUT", "BUTTON_PWM_MIN2", false);
-      xhttp.send(); 
-      }
-
-      else if (document.getElementById("kalibracja_silnika2").innerHTML == "Podaj największy PWM silnika 2"){
-        xhttp.onreadystatechange = function() {
-        if (this.readyState == 4 && this.status == 200) {
-          document.getElementById("kalibracja_silnika2").innerHTML = "Podaj zerowy PWM silnika 2";
-        }
-      }
-      
-      xhttp.open("PUT", "BUTTON_PWM_MAX2", false);
-      xhttp.send(); 
-      }
-
-      else if (document.getElementById("kalibracja_silnika2").innerHTML == "Podaj zerowy PWM silnika 2"){
-        xhttp.onreadystatechange = function() {
-        if (this.readyState == 4 && this.status == 200) {
-          document.getElementById("kalibracja_silnika2").innerHTML = "Podaj najmniejszy PWM silnika 2";
-        }
-      }
-      
-      xhttp.open("PUT", "BUTTON_PWM_ZERO2", false);
-      xhttp.send(); 
-      }
-
-    }
-*/
     function Kalibracja() {
       var xhttp = new XMLHttpRequest(); 
 
@@ -423,6 +354,21 @@ table {
       xhttp.open("PUT", "BUTTON_KALIBRACJA", false);
       xhttp.send(); 
       move();
+    }
+
+    function Pasek_moc(moc){
+      var xhttp = new XMLHttpRequest(); 
+
+      xhttp.onreadystatechange = function() {
+        if (this.readyState == 4 && this.status == 200) {
+          document.getElementById("wsp_mocy_tekst").innerHTML = this.responseText;
+        }
+      }
+
+      xhttp.open("PUT", "PASEK_MOC?MOC="+moc, false);
+      xhttp.send(); 
+      
+
     }
 
     function move() {

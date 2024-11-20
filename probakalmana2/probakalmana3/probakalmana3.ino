@@ -45,6 +45,7 @@ int kat_zadany = 0;
 int pwm_1_zadany = 0;
 int pwm_2_zadany = 0;
 float pwm_freq = 50;
+int wsp_moc =30; //30 %mocy
 
 float wysokosc = 0.25;
 
@@ -63,8 +64,8 @@ bool test_odbioru_danych = false;
 Servo Silnik1;
 Servo Silnik2;
 
-const float u_min = -100;  //0% mocy silnika
-const float u_max = 100;   //100% silnika
+float u_min = -1;  //0% mocy silnika
+float u_max = 1;   //100% silnika
 //const float ts = 0.2;      //czas probkowania (mysle ze co 50ms wystarczy)
 
 float kp_wys = 0.01;
@@ -93,38 +94,33 @@ int16_t ax, ay, az;
 int16_t gx, gy, gz;
 
 
-void kalman_1d(float KalmanState, float KalmanUncertainty, float KalmanInput, float KalmanMeasurement) {
+void kalman_1d(float KalmanState, float KalmanUncertainty, float KalmanInput, float KalmanMeasurement, bool roll) {
   //funkcja realizujaca filtr Kalmana
   //uwaga
 
-  static float ts = 0;
-  static long t_minal =micros();
-  ts = (micros() - t_minal)/1000000.0; //podzielic
-  t_minal = micros();
-
-  static bool roll = true;
+  static float ts_kalman = 0;
   static float ts_roll, ts_pitch = 0;
   static long t_minal_roll =micros(), t_minal_pitch = micros();
 
   if(roll){
     ts_roll = (micros() - t_minal_roll)/1000000.0; //podzielic
     t_minal_roll = micros();
+    ts_kalman = ts_roll;
   }
   else{
     ts_pitch = (micros() - t_minal_pitch)/1000000.0; //podzielic
     t_minal_pitch = micros();
-
+    ts_kalman = ts_pitch;
   }
 
-  KalmanState = KalmanState + ts * KalmanInput;                             //nowa predykcja kata
-  KalmanUncertainty = KalmanUncertainty + ts * ts * 1 * 1;               //niepewnosc predykcji (4 * 4 - wariancja pomiarow zyroskopu)
+  KalmanState = KalmanState + ts_kalman * KalmanInput;                             //nowa predykcja kata
+  KalmanUncertainty = KalmanUncertainty + ts_kalman * ts_kalman * 1 * 1;               //niepewnosc predykcji (4 * 4 - wariancja pomiarow zyroskopu)
   float KalmanGain = KalmanUncertainty * 1 / (1 * KalmanUncertainty + 1 * 1);  //wzmocnienie Kalmana - od niego zalezy, jak wazne sa pomiary, a jak wazna predykcja (3 * 3 - wariancja pomiarow akcelerometru)
   KalmanState = KalmanState + KalmanGain * (KalmanMeasurement - KalmanState);  //kolejna predykcja kata (na podstawie wzmocnienia Kalmana)
   KalmanUncertainty = (1 - KalmanGain) * KalmanUncertainty;                    //niepewnosc kolejnej predykcji
   Kalman1DOutput[0] = KalmanState;
   Kalman1DOutput[1] = KalmanUncertainty;
 
-  roll = !roll;
 }
 void gyro_signals() {
 
@@ -374,6 +370,31 @@ void Aktualizuj_ster() {
   return;
 }
 
+void Pasek_moc(){
+  
+  wsp_moc  = server.arg("MOC").toInt();
+
+  if(wsp_moc<0)
+    wsp_moc =0;
+  else if(wsp_moc>100)
+    wsp_moc=100;
+
+  u_min = -wsp_moc;
+  u_max = wsp_moc;
+
+  if(pwm_1_zadany > 1000 +wsp_moc*10){
+    pwm_1_zadany = 1000 +wsp_moc*10;
+    Silnik1.writeMicroseconds(pwm_1_zadany);
+  }
+
+    if(pwm_2_zadany > 1000 +wsp_moc*10){
+    pwm_2_zadany = 1000 +wsp_moc*10;
+    Silnik2.writeMicroseconds(pwm_2_zadany);
+  }
+  server.send(200, "text/plain", String(wsp_moc));
+  return;
+}
+
 float zmierzOdleglosc() {
 
 
@@ -416,13 +437,15 @@ void sterowanie() {
     static float calka_kat;
 
     float ster_kat = 0;  //dodatni uchyb - chcemy żeby podniósł się LANRC35A
-                         /// czyli silnik1 musi byc podpięty do lanrc2
+    //float ster_kat_minus =0;/// czyli silnik1 musi byc podpięty do lanrc2
 
     e_kat = kat_zadany - KalmanAngleRoll;
     //e_kat = 0;
     ster_kat = PID(kp_kat, ki_kat, kd_kat, e_kat, e_kat_stary, &calka_kat, ts);
     e_kat_stary = e_kat;
     //e_kat_stary = 0;
+
+    ster_kat*=10;   //zamiast na dole to tutaj
 
     if(ster_kat>0){
       pwm_1_zadany = (int)ster_kat;
@@ -433,10 +456,10 @@ void sterowanie() {
       pwm_1_zadany = 0;
       }
 
-    pwm_1_zadany*=10;
+    //pwm_1_zadany*=10;
     pwm_1_zadany+=1000;
 
-    pwm_2_zadany*=10;
+    //pwm_2_zadany*=10;
     pwm_2_zadany+=1000;
 
   }
@@ -453,6 +476,9 @@ void sterowanie() {
   if (pwm_2_zadany > 2000)
     pwm_2_zadany = 2000;
    
+  Silnik1.writeMicroseconds(pwm_1_zadany);
+  Silnik2.writeMicroseconds(pwm_2_zadany);
+  return;
 }
 
 float PID(float kp, float ki, float kd, float e, float e_stary, float* calka, float ts_PID) {
@@ -470,8 +496,6 @@ float PID(float kp, float ki, float kd, float e, float e_stary, float* calka, fl
     u = u_min;
     *calka = (u_min - kp * e - kd * pochodna) / ki;
   }
-
-  
 
   return u;
 }
@@ -582,13 +606,13 @@ void loop() {
   RateYaw -= RateCalibrationYaw;
 
   //roll
-  kalman_1d(KalmanAngleRoll, KalmanUncertaintyAngleRoll, RateRoll, AngleRoll);
+  kalman_1d(KalmanAngleRoll, KalmanUncertaintyAngleRoll, RateRoll, AngleRoll, true);
   KalmanAngleRoll = Kalman1DOutput[0];
   KalmanUncertaintyAngleRoll = Kalman1DOutput[1];
   
 
   //pitch
-  kalman_1d(KalmanAnglePitch, KalmanUncertaintyAnglePitch, RatePitch, AnglePitch);
+  kalman_1d(KalmanAnglePitch, KalmanUncertaintyAnglePitch, RatePitch, AnglePitch, false);
   KalmanAnglePitch = Kalman1DOutput[0];
   KalmanUncertaintyAnglePitch = Kalman1DOutput[1];
   //KalmanAnglePitch =int(KalmanAnglePitch) + (int(KalmanAnglePitch*10) - int(KalmanAnglePitch)*10)/10.0
@@ -695,37 +719,18 @@ void setup() {
   server.on("/UPDATE_STER", Aktualizuj_ster);
   server.on("/TEST_WYS", Test_wysylania_danych);
   server.on("/WIRE_RESET", WireReset);
+  server.on("/PASEK_MOC", Pasek_moc);
   server.begin();
   delay(800);
   Serial.println("Serwer HTTP wystartował");
 
-
-  //Serial.begin(57600);
-  //pinMode(13, OUTPUT);
-  //digitalWrite(13, HIGH);
-
-  /*Wire.setClock(400000);  //czestotliwosc zegara - 400 kHz
-  Serial.println("sss");
-  Wire.begin();
-  Serial.println("ccc");
-  delay(1000);
-
-  //delay(250);
-  Serial.println(micros());
-  //wlaczenie zyroskopu
-  Wire.beginTransmission(0x68);
-  Serial.println("ccdddc");
-  Wire.write(0x6B);
-  Serial.println("asdfdfs");
-  Wire.write(0x00);
-  Serial.println("ccaaaaaaac");
-  Wire.endTransmission();
-  Serial.println("sss");
+  u_min = -wsp_moc;
+  u_max = wsp_moc;
 
   //ustalenie wartości kalibracyjnych
   //2000 pomiarów, w których mpu5060 powinno leżeć na płaskim podłożu
 
-  */
+  
   for (RateCalibrationNumber = 0; RateCalibrationNumber < 2000; RateCalibrationNumber++) {
     gyro_signals();
     RateCalibrationRoll += RateRoll;
