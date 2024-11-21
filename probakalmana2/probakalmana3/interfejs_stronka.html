@@ -70,7 +70,9 @@ table {
     float :left;
     width : 50%;
     
+    
   }
+
 
   .row:after {
       content :"";
@@ -198,17 +200,50 @@ table {
       </div>
     </header>
   
-    <main class="container" style="margin-top:70px">
-      <div class ="row">
-        <div class="column">
-      <div class="category">Odczyty czujnika MPU6050</div>
-    <br>
-    <div class="bodytext">Obrót wokół osi X: <div class="bodytext" id="osx">123</div></div>
-    <br>
-    <div class="bodytext">Obrót wokół osi Y: <div class="bodytext" id="osy">123</div></div>
-    <br>
-    <div class="bodytext">Wysokość nad podstawą: <div class="bodytext" id="wys">123</div></div>
-    <br>
+      <main class="container" style="margin-top:70px">
+        <div class ="row">
+          <div class="column">
+            <div class = "row">
+              <div class="category">Odczyty czujnika MPU6050</div>
+              <div class = "column" style = "width: 40%;">             
+              <br>
+              <div class="bodytext">Obrót wokół osi X: <span id="osx">123</span>
+                 <br><br>
+                 
+                  Obrót wokół osi Y: <span id="osy">123</span>   
+                  <br><br>
+                 
+             
+            </div>
+          </div> 
+        
+            <div class = "column" style = "width: 30%;">
+              
+              <br>
+              <div class="bodytext">Szybkość: <span id="xkalmr_wysw">123</span>
+                 <br><br>
+                 Szybkość: <span id="ykalmr_wysw">123</span>
+                  <br>
+             </div>
+            </div>
+
+            <div class = "column" style = "width: 30%;">
+              
+              <br>
+              <div class="bodytext">
+                Niepewność: <span id="xkalmu_wysw">123</span> 
+                
+                <br><br>
+                 Niepewność: <span id="ykalmu_wysw">123</span>  
+                 <br>
+             </div>
+            </div>
+          
+        </div>
+        <div class = "bodytext">Wysokość nad podstawą: <span id="wys">123</span></div>
+          
+        <br>
+
     <button type="button" class="btn" id="kalibracja" onclick="Kalibracja()">Kalibracja czujnika</button>
     <br>
     <br>
@@ -549,6 +584,22 @@ table {
       xmldoc = xmlResponse.getElementsByTagName("PWM2");
       message = xmldoc[0].firstChild.nodeValue;
       document.getElementById("pwm2_wysw").innerHTML = message;
+
+      xmldoc = xmlResponse.getElementsByTagName("XKALMR");
+      message = xmldoc[0].firstChild.nodeValue;
+      document.getElementById("xkalmr_wysw").innerHTML = message;   
+      
+      xmldoc = xmlResponse.getElementsByTagName("XKALMU");
+      message = xmldoc[0].firstChild.nodeValue;
+      document.getElementById("xkalmu_wysw").innerHTML = message; 
+
+      xmldoc = xmlResponse.getElementsByTagName("YKALMR");
+      message = xmldoc[0].firstChild.nodeValue;
+      document.getElementById("ykalmr_wysw").innerHTML = message; 
+
+      xmldoc = xmlResponse.getElementsByTagName("YKALMU");
+      message = xmldoc[0].firstChild.nodeValue;
+      document.getElementById("ykalmu_wysw").innerHTML = message; 
      }
   
     // general processing code for the web page to ask for an XML steam
