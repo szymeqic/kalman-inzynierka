@@ -46,6 +46,7 @@ int pwm_1_zadany = 0;
 int pwm_2_zadany = 0;
 float pwm_freq = 50;
 int wsp_moc = 30;  //30 %mocy
+bool stop =false; //zeruj calki w sterowaniu
 
 float wysokosc = 0.25;
 
@@ -64,7 +65,7 @@ bool test_odbioru_danych = false;
 Servo Silnik1;
 Servo Silnik2;
 
-float u_min = 0;  //0% mocy silnika
+float u_min = 0.02;  //0% mocy silnika
 float u_max = 1;  //100% silnika
 //const float ts = 0.2;      //czas probkowania (mysle ze co 50ms wystarczy)
 
@@ -97,7 +98,7 @@ int16_t gx, gy, gz;
 void kalman_1d(float KalmanState, float KalmanUncertainty, float KalmanInput, float KalmanMeasurement, bool roll) {
   //funkcja realizujaca filtr Kalmana
   //uwaga
-
+  static float war_zyro = 2, war_akc = 3.5;
   static float ts_kalman = 0;
   static float ts_roll, ts_pitch = 0;
   static long t_minal_roll = micros(), t_minal_pitch = micros();
@@ -111,10 +112,10 @@ void kalman_1d(float KalmanState, float KalmanUncertainty, float KalmanInput, fl
     t_minal_pitch = micros();
     ts_kalman = ts_pitch;
   }
-
+  ts_kalman = 0.004;
   KalmanState = KalmanState + ts_kalman * KalmanInput;                         //nowa predykcja kata
-  KalmanUncertainty = KalmanUncertainty + ts_kalman * ts_kalman * 1 * 1;       //niepewnosc predykcji (4 * 4 - wariancja pomiarow zyroskopu)
-  float KalmanGain = KalmanUncertainty * 1 / (1 * KalmanUncertainty + 1 * 1);  //wzmocnienie Kalmana - od niego zalezy, jak wazne sa pomiary, a jak wazna predykcja (3 * 3 - wariancja pomiarow akcelerometru)
+  KalmanUncertainty = KalmanUncertainty + ts_kalman * ts_kalman * war_zyro * war_zyro;       //niepewnosc predykcji (4 * 4 - wariancja pomiarow zyroskopu)
+  float KalmanGain = KalmanUncertainty * 1 / (1 * KalmanUncertainty + war_akc * war_akc);  //wzmocnienie Kalmana - od niego zalezy, jak wazne sa pomiary, a jak wazna predykcja (3 * 3 - wariancja pomiarow akcelerometru)
   KalmanState = KalmanState + KalmanGain * (KalmanMeasurement - KalmanState);  //kolejna predykcja kata (na podstawie wzmocnienia Kalmana)
   KalmanUncertainty = (1 - KalmanGain) * KalmanUncertainty;                    //niepewnosc kolejnej predykcji
   Kalman1DOutput[0] = KalmanState;
@@ -124,9 +125,9 @@ void gyro_signals() {
 
   mpu.getMotion6(&ax, &ay, &az, &gx, &gy, &gz);
 
-  RateRoll = (float)gx / 65.5;  //prawdziwa predkosc po podzieleniu przez ustalona rozdzielczosc bitowa
-  RatePitch = (float)gy / 65.5;
-  RateYaw = (float)gz / 65.5;
+  RateRoll = (float)-gx / 65.5;  //prawdziwa predkosc po podzieleniu przez ustalona rozdzielczosc bitowa
+  RatePitch = (float)-gy / 65.5;
+  RateYaw = (float)-gz / 65.5;
 
   AccX = (float)ax / 4096 - 0.04;  // wartosci sluza do kalibracji akcelerometru
   AccY = (float)ay / 4096;
@@ -145,12 +146,15 @@ void gyro_signals() {
 
 void watchdog_ts() {
   static long czas_odl, czas_kat = 0;
-  static long czas_stary_odl, czas_stary_kat = micros();
+  static long czas_stary_odl = micros(), czas_stary_kat = micros();
 
   czas_odl = czas_kat = micros();
   if (czas_odl - czas_stary_odl > 20000) {
     zmierzOdleglosc();
     czas_stary_odl = czas_odl;
+    if (ster_auto) { 
+      sterowanie();        //sterowanie z częstotliwością 50 Hz
+    }
   }
   if (czas_kat - czas_stary_kat > 4000) {
     gyro_signals();
@@ -203,7 +207,7 @@ void SendXML() {
   sprintf(buf, "<XKALMU>%d,%d</XKALMU>\n", (int)(KalmanUncertaintyAngleRoll), abs((int)(KalmanUncertaintyAngleRoll * 1000) - ((int)(KalmanUncertaintyAngleRoll)*1000)));
   strcat(XML, buf);
 
- //Dane Kalmana dla kąta pitch
+  //Dane Kalmana dla kąta pitch
 
   sprintf(buf, "<YKALMR>%d,%d</YKALMR>\n", (int)(RatePitch), abs((int)(RatePitch * 1000) - ((int)(RatePitch)*1000)));
   strcat(XML, buf);
@@ -369,12 +373,14 @@ void Aktualizuj_PID() {
 }
 
 void ZmianaPWM_oba() {
+  
   String t_state = server.arg("PWM_oba");
 
   // conver the string sent from the web page to an int
   pwm_1_zadany = pwm_2_zadany = t_state.toInt();
   Silnik1.writeMicroseconds(pwm_1_zadany);
   Silnik2.writeMicroseconds(pwm_2_zadany);
+  stop = true;
 
   strcpy(buf, "");
   sprintf(buf, "%d", pwm_2_zadany);
@@ -386,18 +392,23 @@ void ZmianaPWM_oba() {
 
 void Aktualizuj_ster() {
 
-  ster_auto = !ster_auto;
+
 
   String t_state = server.arg("STER");
 
-  if (t_state == "kat")
+  if (t_state[1] == 'r')
+    ster_auto = false;
+  else if (t_state[1] == 'a')
+    ster_auto = true;
+
+  if (t_state[0] == 'k')
     sterowanie_tryb = 'k';
-  else if (t_state == "wys")
+  else if (t_state[0] == 'w')
     sterowanie_tryb = 'w';
-  else if (t_state == "oba")
+  else if (t_state[0] == 'o')
     sterowanie_tryb = 'o';
 
-  server.send(200, "text/plain", "");
+  server.send(200, "text/plain", String(sterowanie_tryb));
   return;
 }
 
@@ -442,13 +453,29 @@ void sterowanie() {
   ts = (micros() - t_minal) / 1000000.0;  //podzielic
   t_minal = micros();
 
-  if (sterowanie_tryb == 'k' || sterowanie_tryb == 'o') {
+
+  //dane do sterowania kątem
+
     static float e_kat;
     static float e_kat_stary;
     static float calka_kat_plus, calka_kat_minus;
+    
+  // dane do sterowania wysokością
+    static float e_wys;
+    static float e_wys_stary;
+    static float calka_wys;
+
+  
+
+    if(stop)
+      calka_wys = calka_kat_plus = calka_kat_minus =0;
+    stop = false;
+
+  if (sterowanie_tryb == 'k' || sterowanie_tryb == 'o') {
 
     float ster_kat_plus = 0;   //dodatni uchyb - chcemy żeby podniósł się LANRC35A
     float ster_kat_minus = 0;  /// czyli silnik1 musi byc podpięty do lanrc2
+
 
     e_kat = kat_zadany - KalmanAnglePitch;
     //e_kat = 0;
@@ -468,12 +495,8 @@ void sterowanie() {
   }
 
   if (sterowanie_tryb == 'w' || sterowanie_tryb == 'o') {
-    static float e_wys;
-    static float e_wys_stary;
-    static float calka_wys;
 
     float ster_wys = 0;
-
     e_wys = wysokosc_zadana - wysokosc;
     ster_wys = PID(kp_wys, ki_wys, kd_wys, e_wys, e_wys_stary, &calka_wys, ts);
     e_wys_stary = e_wys;
@@ -497,11 +520,11 @@ void nasycenie() {
   if (pwm_2_zadany > 1000 + 10 * wsp_moc || pwm_2_zadany > 2000)
     pwm_2_zadany = 1000 + 10 * wsp_moc;
 
-  if (pwm_1_zadany < 1000)
-    pwm_1_zadany = 1000;
+  if (pwm_1_zadany < 1020)
+    pwm_1_zadany = 1020;
 
-  if (pwm_2_zadany < 1000)
-    pwm_2_zadany = 1000;
+  if (pwm_2_zadany < 1020)
+    pwm_2_zadany = 1020;
 }
 
 
@@ -626,11 +649,6 @@ void loop() {
 
   watchdog_ts();
 
-
-  if (ster_auto) {
-    sterowanie();
-  }
-
   if (kalibracja) {
     RateCalibrationRoll = 0;
     RateCalibrationPitch = 0;
@@ -696,6 +714,7 @@ void setup() {
   }
 
   Serial.println("MPU6050 connection successful");
+  mpu.setDLPFMode(0x04); //filtr dolnoprzepustowy 10Hz  0x05, 5Hz 0x06  
   delay(1000);
 
 

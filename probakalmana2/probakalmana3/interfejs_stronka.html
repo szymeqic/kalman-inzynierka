@@ -250,6 +250,7 @@ table {
     <div id="myProgress">
       <div id="myBar"></div>
     </div>
+    <input type="te"
     <br>
     <div class="category">Wartości zadane</div>
     <br>
@@ -332,17 +333,19 @@ table {
           <br>
           <br>
           <br>
-        <input type="checkbox" id ="sterowanie" tryb="ręczne" oninput="Sterowanie_przycisk()" ></input>Sterowanie automatyczne
+        <input type="checkbox" id ="sterowanie" tryb="ręczne" oninput="Sterowanie_przycisk(this.id)"  ></input>Sterowanie automatyczne
+        <button type="button" id ="button_stop" class="btn" onclick = "btn_stop()" style = "height: 60px; width: 120px;"> STOP</button>
         <br>
         <br>
-        <input type = "radio" id = "radio_wys" name = "wybor_ster" value="wys" > <label for="radio_wys" name = "wybor_ster">Sterowanie wysokością</label>
-        <input type = "radio" id = "radio_kat" name = "wybor_ster" value="kat"  checked="true"> <label for="radio_kat" name = "wybor_ster" >Sterowanie kątem</label>
+        <input type = "radio" id = "radio_wys" name = "wybor_ster" value="w" oninput="Sterowanie_przycisk(this.id)"> <label for="radio_wys" name = "wybor_ster">Sterowanie wysokością</label>
+        <input type = "radio" id = "radio_kat" name = "wybor_ster" value="k"  checked="true" oninput="Sterowanie_przycisk(this.id)"> <label for="radio_kat" name = "wybor_ster" >Sterowanie kątem</label>
         <br>
-        <input type = "radio" id = "radio_oba" name = "wybor_ster" value="oba"> <label for="radio_oba"  name = "wybor_ster">Sterowanie wysokością i kątem</label>
+        <input type = "radio" id = "radio_oba" name = "wybor_ster" value="o" oninput="Sterowanie_przycisk(this.id)"> <label for="radio_oba"  name = "wybor_ster">Sterowanie wysokością i kątem</label>
         
         <br>
         <br>
         Aktualne sterowanie: <span id="Sterowanie_tekst" >Sterowanie ręczne</span>
+        
         <br>
         <div class="bodytext">Wypełnienie silnika 1: <span id="pwm1_wysw"></span> &mu;s</div>
         <br>
@@ -520,34 +523,68 @@ table {
         xhttp.send();            
     }
 
-    function Sterowanie_przycisk(){
-      var lista =  document.getElementsByName("wybor_ster");
+
+    function btn_stop(){
+      Aktualizuj_PWM(1000, 3); 
+      if(document.getElementById("sterowanie").getAttribute("tryb")=="auto")
+        document.getElementById("sterowanie").click();
+
+    }
+
+
+    function Sterowanie_przycisk(id){     
       var pudlo = document.getElementById("sterowanie");
       var ster = String(document.querySelector('input[name="wybor_ster"]:checked').value);
+      var tryb_ster = "aa";
 
+      if(id != "sterowanie")
+    {
+      if(pudlo.getAttribute("tryb") == "ręczne"){
+
+        tryb_ster = "r";
+        document.getElementById("Sterowanie_tekst").textContent = "Sterowanie ręczne";
+      }
+      else if(pudlo.getAttribute("tryb") == "auto"){
+        tryb_ster = "a";
+        document.getElementById("Sterowanie_tekst").textContent = "Sterowanie automatyczne";
+      }
+    }
+
+      
+      
+      if(id =="sterowanie"){
 
       if(pudlo.getAttribute("tryb") == "ręczne"){
+        tryb_ster ="a";
         pudlo.setAttribute("tryb", "auto");
         document.getElementById("Sterowanie_tekst").textContent = "Sterowanie automatyczne";
 
-        lista.forEach(element => element.style.visibility = "visible");
+
           }
       
       else if(pudlo.getAttribute("tryb") == "auto"){
+        tryb_ster="r";
         pudlo.setAttribute("tryb", "ręczne");
         document.getElementById("Sterowanie_tekst").textContent = "Sterowanie ręczne";
-        lista.forEach(element =>  element.style.visibility = "hidden");
           }
-      
+        }
+
       
       var xhttp = new XMLHttpRequest();
-      // xhttp.onreadystatechange = function() {
-      //   if (this.readyState == 4 && this.status == 200) {
-      //     // update the web based on reply from  ESP
-      //     document.getElementById("Sterowanie_tekst").innerHTML=this.responseText;
-      //   }
-      // }
-      xhttp.open("PUT", "UPDATE_STER?STER="+ster, true);
+       xhttp.onreadystatechange = function() {
+         if (this.readyState == 4 && this.status == 200 && pudlo.getAttribute("tryb") == "auto" ) {
+           // update the web based on reply from  ESP
+           var tekst = " ";
+           if(this.responseText =="o")
+            tekst = " wysokością i kątem";
+          else if(this.responseText =="k")
+            tekst = " kątem";
+          else if(this.responseText =="w")
+            tekst = " wysokością";
+           document.getElementById("Sterowanie_tekst").innerHTML+= tekst;
+         }
+       }
+      xhttp.open("PUT", "UPDATE_STER?STER="+ster+tryb_ster, true);
       xhttp.send();
 
       return;
