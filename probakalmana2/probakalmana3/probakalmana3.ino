@@ -184,10 +184,11 @@ void SendXML() {
 
   strcpy(XML, "<?xml version = '1.0'?>\n<Data>\n");
 
-  sprintf(buf, "<X1>%d,%d</X1>\n", (int)(KalmanAngleRoll), abs((int)(KalmanAngleRoll * 100) - ((int)(KalmanAngleRoll)*100)));
+
+  sprintf(buf, "<X1>%f</X1>\n", ((int)(KalmanAngleRoll*1000))/1000.0);
   strcat(XML, buf);
 
-  sprintf(buf, "<Y1>%d,%d</Y1>\n", (int)(KalmanAnglePitch), abs((int)(KalmanAnglePitch * 100) - ((int)(KalmanAnglePitch)*100)));
+  sprintf(buf, "<Y1>%f</Y1>\n", ((int)(KalmanAnglePitch*1000))/1000.0);
   strcat(XML, buf);
 
   sprintf(buf, "<W1>%d,%d</W1>\n", (int)(wysokosc), abs((int)(wysokosc * 10) - ((int)(wysokosc)*10)));
@@ -201,18 +202,25 @@ void SendXML() {
 
   //Dane Kalmana dla kąta roll
 
-  sprintf(buf, "<XKALMR>%d,%d</XKALMR>\n", (int)(RateRoll), abs((int)(RateRoll * 1000) - ((int)(RateRoll)*1000)));
+  sprintf(buf, "<XKALMR>%f</XKALMR>\n", ((int)(RateRoll*1000))/1000.0);
   strcat(XML, buf);
 
-  sprintf(buf, "<XKALMU>%d,%d</XKALMU>\n", (int)(KalmanUncertaintyAngleRoll), abs((int)(KalmanUncertaintyAngleRoll * 1000) - ((int)(KalmanUncertaintyAngleRoll)*1000)));
+  sprintf(buf, "<XKALMU>%f</XKALMU>\n", ((int)(KalmanUncertaintyAngleRoll*1000))/1000.0);
   strcat(XML, buf);
 
   //Dane Kalmana dla kąta pitch
 
-  sprintf(buf, "<YKALMR>%d,%d</YKALMR>\n", (int)(RatePitch), abs((int)(RatePitch * 1000) - ((int)(RatePitch)*1000)));
+  sprintf(buf, "<YKALMR>%f</YKALMR>\n",  ((int)(RatePitch*1000))/1000.0);
   strcat(XML, buf);
 
-  sprintf(buf, "<YKALMU>%d,%d</YKALMU>\n", (int)(KalmanUncertaintyAnglePitch), abs((int)(KalmanUncertaintyAnglePitch * 1000) - ((int)(KalmanUncertaintyAnglePitch)*1000)));
+  sprintf(buf, "<YKALMU>%f</YKALMU>\n", ((int)(KalmanUncertaintyAnglePitch*1000))/1000.0);
+  strcat(XML, buf);
+
+
+  sprintf(buf, "<XCZYST>%f</XCZYST>\n", ((int)(AngleRoll*1000))/1000.0);
+  strcat(XML, buf);
+
+  sprintf(buf, "<YCZYST>%f</YCZYST>\n", ((int)(AnglePitch*1000))/1000.0);
   strcat(XML, buf);
 
   strcat(XML, "</Data>\n");

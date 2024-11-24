@@ -224,6 +224,7 @@ table {
                  <br><br>
                  Szybkość: <span id="ykalmr_wysw">123</span>
                   <br>
+
              </div>
             </div>
 
@@ -235,23 +236,42 @@ table {
                 
                 <br><br>
                  Niepewność: <span id="ykalmu_wysw">123</span>  
-                 <br>
+                 <br><br>
+
              </div>
             </div>
           
         </div>
         <div class = "bodytext">Wysokość nad podstawą: <span id="wys">123</span></div>
-          
-        <br>
+        <br><br>
 
-    <button type="button" class="btn" id="kalibracja" onclick="Kalibracja()">Kalibracja czujnika</button>
-    <br>
-    <br>
-    <div id="myProgress">
-      <div id="myBar"></div>
+      <!-- >
+        <button type="button" class="btn" id="kalibracja" onclick="Kalibracja()">Kalibracja czujnika</button>
+        <div id="myProgress">
+          <div id="myBar"></div>     
+        </div>
+        <br>
+        <!-->
+    <div class ="row">
+      <div class="column">
+        <div class="bodytext">
+          Odczyt obrotu wokół osi X: <span id="czysty_x">123</span>
+        </div>
+      </div>
+
+      <div class = "column">
+        <div class = "bodytext">
+          Odczyt obrotu wokół osi Y: <span id="czysty_y">123</span>
+        </div>
+      </div>
+
     </div>
-    <input type="te"
     <br>
+    <button class="btn" id = "pobierz_dane" onclick = "pobierzDane()">Pobierz dane</button>
+    <textarea style = "display: none" id = "dane_pudlo" style="white-space: pre-line;">XKALM, YKALM, XCZYST, YCZYST
+
+    </textarea>
+
     <div class="category">Wartości zadane</div>
     <br>
     <div class="bodytext">Zadana wysokość: <span id="wysokosc">5</span> cm</div>
@@ -531,6 +551,19 @@ table {
 
     }
 
+    function pobierzDane(){
+      var dt = new Date();     
+      const link = document.createElement("a");
+      const content = document.getElementById("dane_pudlo").textContent;     
+      const file = new Blob([content], { type: 'text/plain' });
+      link.href = URL.createObjectURL(file);
+      link.download = "Dane_czujnik" + dt.toLocaleTimeString()  +".txt";
+      link.click();
+      URL.revokeObjectURL(link.href);
+      document.getElementById("dane_pudlo").textContent = "XKALM, YKALM, XCZYST, YCZYST &#10;&#13";
+
+    }
+
 
     function Sterowanie_przycisk(id){     
       var pudlo = document.getElementById("sterowanie");
@@ -596,6 +629,8 @@ table {
       var message;
       var xmlResponse;
       var xmldoc;
+      var len=0;
+      var wiersz = "\n";
       var dt = new Date();
       xmlResponse=xmlHttp.responseXML;
 
@@ -604,14 +639,27 @@ table {
 
       xmldoc = xmlResponse.getElementsByTagName("X1"); //bits for A0
       message = xmldoc[0].firstChild.nodeValue;
+      message = String(message).replace(".", ",");
+
+      message = message.substring(0, message.length-3);
       document.getElementById("osx").innerHTML = message;
+      message = message.replace(",", ".");
+      wiersz += (message + ", ");
+      
 
       xmldoc = xmlResponse.getElementsByTagName("Y1");
       message = xmldoc[0].firstChild.nodeValue;
+      message = String(message).replace(".", ",");
+      message = message.substring(0, message.length-3);
       document.getElementById("osy").innerHTML = message;
+      message = message.replace(",", ".");
+      wiersz += (message + ", ");
+      
 
       xmldoc = xmlResponse.getElementsByTagName("W1");
       message = xmldoc[0].firstChild.nodeValue;
+      message = String(message).replace(".", ",");
+      message = message.substring(0, message.length-3);
       document.getElementById("wys").innerHTML = message;
 
       xmldoc = xmlResponse.getElementsByTagName("PWM1");
@@ -620,23 +668,53 @@ table {
 
       xmldoc = xmlResponse.getElementsByTagName("PWM2");
       message = xmldoc[0].firstChild.nodeValue;
+      
       document.getElementById("pwm2_wysw").innerHTML = message;
 
       xmldoc = xmlResponse.getElementsByTagName("XKALMR");
       message = xmldoc[0].firstChild.nodeValue;
-      document.getElementById("xkalmr_wysw").innerHTML = message;   
+      message = String(message).replace(".", ",");
+      message = message.substring(0, message.length-3);
+      document.getElementById("xkalmr_wysw").innerHTML = message; 
+        
       
       xmldoc = xmlResponse.getElementsByTagName("XKALMU");
       message = xmldoc[0].firstChild.nodeValue;
+      message = String(message).replace(".", ",");
+      message = message.substring(0, message.length-3);
       document.getElementById("xkalmu_wysw").innerHTML = message; 
 
       xmldoc = xmlResponse.getElementsByTagName("YKALMR");
       message = xmldoc[0].firstChild.nodeValue;
+      message = String(message).replace(".", ",");
+      message = message.substring(0, message.length-3);
       document.getElementById("ykalmr_wysw").innerHTML = message; 
 
       xmldoc = xmlResponse.getElementsByTagName("YKALMU");
       message = xmldoc[0].firstChild.nodeValue;
+      message = String(message).replace(".", ",");
+      message = message.substring(0, message.length-3);
       document.getElementById("ykalmu_wysw").innerHTML = message; 
+
+      xmldoc = xmlResponse.getElementsByTagName("XCZYST");
+      message = xmldoc[0].firstChild.nodeValue;
+      message = String(message).replace(".", ",");
+      message = message.substring(0, message.length-3);
+      document.getElementById("czysty_x").innerHTML = message;
+      message = message.replace(",", ".");
+      wiersz += (message + ", ");
+      
+
+      xmldoc = xmlResponse.getElementsByTagName("YCZYST");
+      message = xmldoc[0].firstChild.nodeValue;
+      message = String(message).replace(".", ",");
+      message = message.substring(0, message.length-3);
+      document.getElementById("czysty_y").innerHTML = message;
+      message = message.replace(",", ".");
+      wiersz += message;  
+      
+      document.getElementById("dane_pudlo").textContent+= wiersz;
+
      }
   
     // general processing code for the web page to ask for an XML steam
@@ -653,7 +731,7 @@ table {
       }       
         // you may have to play with this value, big pages need more porcessing time, and hence
         // a longer timeout
-        setTimeout("process()",10);
+        setTimeout("process()",20);
     }
   
   
