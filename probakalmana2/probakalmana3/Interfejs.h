@@ -268,7 +268,7 @@ table {
     </div>
     <br>
     <button class="btn" id = "pobierz_dane" onclick = "pobierzDane()">Pobierz dane</button>
-    <textarea style = "display: none" id = "dane_pudlo" style="white-space: pre-line;">XKALM, YKALM, XCZYST, YCZYST
+    <textarea style = "display: none" id = "dane_pudlo" style="white-space: pre-line;">XKALM, YKALM, XCZYST, YCZYST, KZAD, WZAD, WYS, CZAS
 
     </textarea>
 
@@ -557,10 +557,10 @@ table {
       const content = document.getElementById("dane_pudlo").textContent;     
       const file = new Blob([content], { type: 'text/plain' });
       link.href = URL.createObjectURL(file);
-      link.download = "Dane_czujnik" + dt.toLocaleTimeString()  +".txt";
+      link.download = "Dane_czujnik" + dt.toLocaleTimeString()  +".csv";
       link.click();
       URL.revokeObjectURL(link.href);
-      document.getElementById("dane_pudlo").textContent = "XKALM, YKALM, XCZYST, YCZYST &#10;&#13";
+      document.getElementById("dane_pudlo").textContent = "XKALM, YKALM, XCZYST, YCZYST, KZAD, WZAD, WYS, CZAS \n";
 
     }
 
@@ -659,7 +659,7 @@ table {
       xmldoc = xmlResponse.getElementsByTagName("W1");
       message = xmldoc[0].firstChild.nodeValue;
       message = String(message).replace(".", ",");
-      message = message.substring(0, message.length-3);
+      
       document.getElementById("wys").innerHTML = message;
 
       xmldoc = xmlResponse.getElementsByTagName("PWM1");
@@ -671,6 +671,8 @@ table {
       
       document.getElementById("pwm2_wysw").innerHTML = message;
 
+
+      /*
       xmldoc = xmlResponse.getElementsByTagName("XKALMR");
       message = xmldoc[0].firstChild.nodeValue;
       message = String(message).replace(".", ",");
@@ -695,6 +697,7 @@ table {
       message = String(message).replace(".", ",");
       message = message.substring(0, message.length-3);
       document.getElementById("ykalmu_wysw").innerHTML = message; 
+      */
 
       xmldoc = xmlResponse.getElementsByTagName("XCZYST");
       message = xmldoc[0].firstChild.nodeValue;
@@ -711,8 +714,15 @@ table {
       message = message.substring(0, message.length-3);
       document.getElementById("czysty_y").innerHTML = message;
       message = message.replace(",", ".");
-      wiersz += message;  
+      wiersz += (message + ", ");
       
+
+
+      wiersz+= (document.getElementById("kat").textContent + ", ");
+      wiersz+= (document.getElementById("wysokosc").textContent + ", ");
+      wiersz+= (document.getElementById("wys").textContent.replace(",", ".") + ", ") ;
+      wiersz+=String(dt.getTime()).substring(4);
+
       document.getElementById("dane_pudlo").textContent+= wiersz;
 
      }
@@ -731,7 +741,7 @@ table {
       }       
         // you may have to play with this value, big pages need more porcessing time, and hence
         // a longer timeout
-        setTimeout("process()",20);
+        setTimeout("process()",10);
     }
   
   

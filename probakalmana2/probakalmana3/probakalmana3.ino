@@ -201,6 +201,7 @@ void SendXML() {
   strcat(XML, buf);
 
   //Dane Kalmana dla kąta roll
+  /*
 
   sprintf(buf, "<XKALMR>%f</XKALMR>\n", ((int)(RateRoll*1000))/1000.0);
   strcat(XML, buf);
@@ -216,6 +217,7 @@ void SendXML() {
   sprintf(buf, "<YKALMU>%f</YKALMU>\n", ((int)(KalmanUncertaintyAnglePitch*1000))/1000.0);
   strcat(XML, buf);
 
+*/
 
   sprintf(buf, "<XCZYST>%f</XCZYST>\n", ((int)(AngleRoll*1000))/1000.0);
   strcat(XML, buf);
@@ -304,6 +306,24 @@ void KalibracjaUkladu() {
 }
 
 
+void zmien_pwm(int pwm, int silnik){
+
+  if(silnik==1){
+    if(!Silnik1.attached())
+      Silnik1.attach(PIN_SILNIK1);  
+
+    Silnik1.writeMicroseconds(pwm);
+  }
+
+  if(silnik==2){
+    if(!Silnik2.attached())
+      Silnik2.attach(PIN_SILNIK2);
+  Silnik2.writeMicroseconds(pwm);
+  }
+
+}
+
+
 void ZmianaPWM_1() {
   String t_state = server.arg("PWM1");
   Serial.println(t_state);
@@ -312,7 +332,8 @@ void ZmianaPWM_1() {
   pwm_1_zadany = t_state.toInt();
 
   //Zmiana PWM silnika
-  Silnik1.writeMicroseconds(pwm_1_zadany);
+  zmien_pwm(pwm_1_zadany, 1);
+  //Silnik1.writeMicroseconds(pwm_1_zadany);
 
   strcpy(buf, "");
   sprintf(buf, "%d", pwm_1_zadany);
@@ -326,7 +347,8 @@ void ZmianaPWM_2() {
 
   // conver the string sent from the web page to an int
   pwm_2_zadany = t_state.toInt();
-  Silnik2.writeMicroseconds(pwm_2_zadany);
+  zmien_pwm(pwm_2_zadany, 2);
+  //Silnik2.writeMicroseconds(pwm_2_zadany);
 
   strcpy(buf, "");
   sprintf(buf, "%d", pwm_2_zadany);
@@ -386,8 +408,11 @@ void ZmianaPWM_oba() {
 
   // conver the string sent from the web page to an int
   pwm_1_zadany = pwm_2_zadany = t_state.toInt();
-  Silnik1.writeMicroseconds(pwm_1_zadany);
-  Silnik2.writeMicroseconds(pwm_2_zadany);
+
+  zmien_pwm(pwm_1_zadany, 1);
+  zmien_pwm(pwm_2_zadany, 2);
+  //Silnik1.writeMicroseconds(pwm_1_zadany);
+  //Silnik2.writeMicroseconds(pwm_2_zadany);
   stop = true;
 
   strcpy(buf, "");
@@ -434,12 +459,14 @@ void Pasek_moc() {
 
   if (pwm_1_zadany > 1000 + wsp_moc * 10) {
     pwm_1_zadany = 1000 + wsp_moc * 10;
-    Silnik1.writeMicroseconds(pwm_1_zadany);
+    zmien_pwm(pwm_1_zadany, 1);
+    //Silnik1.writeMicroseconds(pwm_1_zadany);
   }
 
   if (pwm_2_zadany > 1000 + wsp_moc * 10) {
     pwm_2_zadany = 1000 + wsp_moc * 10;
-    Silnik2.writeMicroseconds(pwm_2_zadany);
+    zmien_pwm(pwm_2_zadany, 2);
+    //Silnik2.writeMicroseconds(pwm_2_zadany);
   }
   server.send(200, "text/plain", String(wsp_moc));
   return;
@@ -516,8 +543,10 @@ void sterowanie() {
 
   nasycenie();
 
-  Silnik1.writeMicroseconds(pwm_1_zadany);
-  Silnik2.writeMicroseconds(pwm_2_zadany);
+  zmien_pwm(pwm_1_zadany, 1);
+  zmien_pwm(pwm_2_zadany, 2);
+  //Silnik1.writeMicroseconds(pwm_1_zadany);
+  //Silnik2.writeMicroseconds(pwm_2_zadany);
   return;
 }
 
@@ -776,11 +805,6 @@ void setup() {
   RateCalibrationRoll /= 2000;
   RateCalibrationPitch /= 2000;
   RateCalibrationYaw /= 2000;
-
-
-  Silnik1.attach(PIN_SILNIK1);
-  Silnik2.attach(PIN_SILNIK2);
-
 
 
   lox.startRangeContinuous();
