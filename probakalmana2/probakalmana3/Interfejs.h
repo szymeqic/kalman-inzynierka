@@ -154,6 +154,20 @@ table {
     color: #AAAAAA;
     line-height: 20px;
   }
+
+  datalist {
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  writing-mode:sideways-rl; 
+  font-size: small;
+  width: 90%;
+}
+
+
+option {
+  padding: 0;
+}
   .container {
     max-width: 1800px;
     margin: 0 auto;
@@ -268,6 +282,7 @@ table {
     </div>
     <br>
     <button class="btn" id = "pobierz_dane" onclick = "pobierzDane()">Pobierz dane</button>
+    <button class="btn" id = "pobierz_dane" onclick = "czyscDane()">Czyść dane</button>
     <textarea style = "display: none" id = "dane_pudlo" style="white-space: pre-line;">XKALM, YKALM, XCZYST, YCZYST, KZAD, WZAD, WYS, CZAS
 
     </textarea>
@@ -276,15 +291,111 @@ table {
     <br>
     <div class="bodytext">Zadana wysokość: <span id="wysokosc">5</span> cm</div>
     <br>
-    <input type="range" class="fanrpmslider" min="5" max="40" value = "5" width = "0%" oninput="UpdateWysokosc(this.value)"/>
+    <input type="range" class="fanrpmslider" list ="war_suwak_wys" min="5" max="40"  value = "5" width = "0%" oninput="UpdateWysokosc(this.value)"/>       
+    <datalist id = "war_suwak_wys" >
+      <option value=40 label=40></option>
+      <option value=39 label=39></option>
+      <option value=38 label=38></option>
+      <option value=37 label=37></option>
+      <option value=36 label=36></option>
+      <option value=35 label=35></option>
+      <option value=34 label=34></option>
+      <option value=33 label=33></option>
+      <option value=32 label=32></option>
+      <option value=31 label=31></option>
+      <option value=30 label=30></option>
+      <option value=29 label=29></option>
+      <option value=28 label=28></option>
+      <option value=27 label=27></option>
+      <option value=26 label=26></option>
+      <option value=25 label=25></option>
+      <option value=24 label=24></option>
+      <option value=23 label=23></option>
+      <option value=22 label=22></option>
+      <option value=21 label=21></option>
+      <option value=20 label=20></option>
+      <option value=19 label=19></option>
+      <option value=18 label=18></option>
+      <option value=17 label=17></option>
+      <option value=16 label=16></option>
+      <option value=15 label=15></option>
+      <option value=14 label=14></option>
+      <option value=13 label=13></option>
+      <option value=12 label=12></option>
+      <option value=11 label=11></option>
+      <option value=10 label=10></option>
+      <option value=9 label=9></option>
+      <option value=8 label=8></option>
+      <option value=7 label=7></option>
+      <option value=6 label=6></option>
+      <option value=5 label=5></option>
+    </datalist>
+ 
     <br>
+
     <div class="bodytext">Zadany kąt: <span id="kat">0</span> stopni</div>
     <br>
-    <input type="range" class="fanrpmslider" min="-20" max="20" value = "0" width = "0%" oninput="UpdateKat(this.value)"/>
+    <input type="range" class="fanrpmslider" list="war_suwak_kat" min="-25" max="25"  value = "0" width = "0%" oninput="UpdateKat(this.value)"/>
     <br>
     <br>
 
+    <datalist id ="war_suwak_kat">
+      <option value=-25 label=-25></option>
+      <option value=-24 label=-24></option>
+      <option value=-23 label=-23></option>
+      <option value=-22 label=-22></option>
+      <option value=-21 label=-21></option>
+      <option value=-20 label=-20></option>
+      <option value=-19 label=-19></option>
+      <option value=-18 label=-18></option>
+      <option value=-17 label=-17></option>
+      <option value=-16 label=-16></option>
+      <option value=-15 label=-15></option>
+      <option value=-14 label=-14></option>
+      <option value=-13 label=-13></option>
+      <option value=-12 label=-12></option>
+      <option value=-11 label=-11></option>
+      <option value=-10 label=-10></option>
+      <option value=-9 label=-9></option>
+      <option value=-8 label=-8></option>
+      <option value=-7 label=-7></option>
+      <option value=-6 label=-6></option>
+      <option value=-5 label=-5></option>
+      <option value=-4 label=-4></option>
+      <option value=-3 label=-3></option>
+      <option value=-2 label=-2></option>
+      <option value=-1 label=-1></option>
+      <option value=0 label=0></option>
+      <option value=1 label=1></option>
+      <option value=2 label=2></option>
+      <option value=3 label=3></option>
+      <option value=4 label=4></option>
+      <option value=5 label=5></option>
+      <option value=6 label=6></option>
+      <option value=7 label=7></option>
+      <option value=8 label=8></option>
+      <option value=9 label=9></option>
+     <option value=10 label=10></option>
+      <option value=11 label=11></option>
+      <option value=12 label=12></option>
+      <option value=13 label=13></option>
+      <option value=14 label=14></option>
+      <option value=15 label=15></option>
+      <option value=16 label=16></option>
+      <option value=17 label=17></option>
+      <option value=18 label=18></option>
+      <option value=19 label=19></option>
+      <option value=20 label=20></option>
+      <option value=21 label=21></option>
+      <option value=22 label=22></option>
+      <option value=23 label=23></option>
+      <option value=24 label=24></option>
+      <option value=25 label=25></option>
 
+    </datalist>
+
+ 
+    
     <div class="category">Ręczne sterowanie wypełnieniem PWM</div>
     <br>
     <div class="bodytext">Zadane wypełnienie silnika 1: <span id="PWM_1">1000</span> &mu;s</div>
@@ -311,18 +422,18 @@ table {
               <div class = "bodytext" style = "font-size: 30px;">Regulacja wysokości</div>
               <br>
               <br>
-              <div class ="bodytext"> Współczynnik k<sub>p</sub>: <span id="Pasek_wys_kp_war">0.01</span>  </div> 
-              <input type="range" class="fanrpmslider" min="0.01" max="15" value = "0.01" width = "0%" step = "0.01" id = "Pasek_wys_kp" oninput="Pasek_PID(this.id, this.value)"/>
+              <div class ="bodytext"> Współczynnik k<sub>p</sub>: <span id="Pasek_wys_kp_war">0.5</span> <sup>%</sup>&frasl;<sub>°</sub>  </div> 
+              <input type="range" class="fanrpmslider" min="0.01" max="10" value = "0.01" width = "0%" step = "0.002" id = "Pasek_wys_kp" oninput="Pasek_PID(this.id, this.value)"/>
               <br>
 
               <br>
-              <div class ="bodytext"> Współczynnik k<sub>i</sub>:  <span id="Pasek_wys_ki_war">0.01</span>  </div> 
-              <input type="range" class="fanrpmslider" min="0" max="5" value = "0.01" width = "0%" step = "0.01" id = "Pasek_wys_ki" oninput="Pasek_PID(this.id, this.value)"/>
+              <div class ="bodytext"> Współczynnik k<sub>i</sub>:  <span id="Pasek_wys_ki_war">0</span> <sup>%</sup>&frasl;<sub>°s</sub> </div> 
+              <input type="range" class="fanrpmslider" min="0" max="5" value = "0" width = "0%" step = "0.002" id = "Pasek_wys_ki" oninput="Pasek_PID(this.id, this.value)"/>
               <br>
 
               <br>
-              <div class ="bodytext"> Współczynnik k<sub>d</sub>: <span id="Pasek_wys_kd_war">0.01</span>   </div> 
-              <input type="range" class="fanrpmslider" min="0" max="5" value = "0.01" width = "0%" step = "0.01" id = "Pasek_wys_kd" oninput="Pasek_PID(this.id, this.value)"/>
+              <div class ="bodytext"> Współczynnik k<sub>d</sub>: <span id="Pasek_wys_kd_war">0</span> <sup>%s</sup>&frasl;<sub>°</sub> </div> 
+              <input type="range" class="fanrpmslider" min="0" max="5" value = "0" width = "0%" step = "0.002" id = "Pasek_wys_kd" oninput="Pasek_PID(this.id, this.value)"/>
               <br>
 
           </div>
@@ -330,18 +441,18 @@ table {
           <div class = "bodytext" style = "font-size: 30px;">Regulacja kąta</div>
           <br>
           <br>
-          <div class ="bodytext"> Współczynnik k<sub>p</sub>: <span id="Pasek_kat_kp_war">0.01</span>  </div> 
-          <input type="range" class="fanrpmslider" min="0.01" max="15" value = "0.01" width = "0%" step = "0.01" id = "Pasek_kat_kp" oninput="Pasek_PID(this.id, this.value)"/>
+          <div class ="bodytext"> Współczynnik k<sub>p</sub>: <span id="Pasek_kat_kp_war">0.5</span><sup>%</sup>&frasl;<sub>°</sub> </div> 
+          <input type="range" class="fanrpmslider" min="0.01" max="10" value = "0.01" width = "0%" step = "0.002" id = "Pasek_kat_kp" oninput="Pasek_PID(this.id, this.value)"/>
           <br>
 
           <br>
-          <div class ="bodytext"> Współczynnik k<sub>i</sub>:  <span id="Pasek_kat_ki_war">0.01</span>  </div> 
-          <input type="range" class="fanrpmslider" min="0" max="5" value = "0.01" width = "0%" step = "0.01" id = "Pasek_kat_ki" oninput="Pasek_PID(this.id, this.value)"/>
+          <div class ="bodytext"> Współczynnik k<sub>i</sub>:  <span id="Pasek_kat_ki_war">0</span> <sup>%</sup>&frasl;<sub>°s</sub>  </div> 
+          <input type="range" class="fanrpmslider" min="0" max="5" value = "0" width = "0%" step = "0.002" id = "Pasek_kat_ki" oninput="Pasek_PID(this.id, this.value)"/>
           <br>
 
           <br>
-          <div class ="bodytext"> Współczynnik k<sub>d</sub>: <span id="Pasek_kat_kd_war">0.01</span>   </div> 
-          <input type="range" class="fanrpmslider" min="0" max="5" value = "0.01" width = "0%" step = "0.01" id = "Pasek_kat_kd" oninput="Pasek_PID(this.id, this.value)"/>
+          <div class ="bodytext"> Współczynnik k<sub>d</sub>: <span id="Pasek_kat_kd_war">0</span> <sup>%s</sup>&frasl;<sub>°</sub> </div> 
+          <input type="range" class="fanrpmslider" min="0" max="5" value = "0" width = "0%" step = "0.002" id = "Pasek_kat_kd" oninput="Pasek_PID(this.id, this.value)"/>
           <br>
         </div>
         <div class = "row">
@@ -532,12 +643,12 @@ table {
 
 
     function Pasek_PID(id, wartosc){
-      var xhttp = new XMLHttpRequest();
-
+      var xhttp = new XMLHttpRequest();      
       xhttp.onreadystatechange = function() {
 
         if (this.readyState == 4 && this.status == 200)         
-            document.getElementById(id + "_war").innerHTML=this.responseText;
+            document.getElementById(id + "_war").innerHTML=(parseFloat(this.responseText)*50).toFixed(1);
+            document.getElementById(id + "_war").innerHTML = document.getElementById(id + "_war").innerHTML.replace(".", ",");
             }
         xhttp.open("PUT", "AKTUALIZUJ_PID?ZMIANA_PID="+id+(wartosc*100), true);
         xhttp.send();            
@@ -564,6 +675,9 @@ table {
 
     }
 
+    function czyscDane(){
+      document.getElementById("dane_pudlo").textContent = "XKALM, YKALM, XCZYST, YCZYST, KZAD, WZAD, WYS, CZAS \n";
+    }
 
     function Sterowanie_przycisk(id){     
       var pudlo = document.getElementById("sterowanie");
@@ -685,7 +799,7 @@ table {
       message = String(message).replace(".", ",");
       message = message.substring(0, message.length-3);
       document.getElementById("xkalmu_wysw").innerHTML = message; 
-
+      */
       xmldoc = xmlResponse.getElementsByTagName("YKALMR");
       message = xmldoc[0].firstChild.nodeValue;
       message = String(message).replace(".", ",");
@@ -697,7 +811,7 @@ table {
       message = String(message).replace(".", ",");
       message = message.substring(0, message.length-3);
       document.getElementById("ykalmu_wysw").innerHTML = message; 
-      */
+      
 
       xmldoc = xmlResponse.getElementsByTagName("XCZYST");
       message = xmldoc[0].firstChild.nodeValue;

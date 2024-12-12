@@ -1,5 +1,14 @@
-dane_1 = csvread("dane13.csv",2,0);
-dane_2 = csvread("dane12.csv",2,0);
+dane_1 = csvread("dane28.csv",2,0);
+dane_2 = csvread("dane31wys.csv",2,0);
+
+
+
+% dane 18 - kp 14% ki 13%   wspmocy 30%
+%dane 19 tak samo
+%dane 20 15% 14,5 %
+
+
+
 
 
 %pierwszy przebieg
@@ -32,16 +41,30 @@ figure(1)
 plot(czas_1, y_1, czas_1, yk_1, czas_1,k_1 );
 legend("Dane z czujnika [°]", "Dane po filtracji filtrem Kalmana [°]", "Kąt zadany [°]")
 grid on
-title("Przebieg orientacji obiektu w czasie")
-xlabel("Czas [s]")
-ylabel("Wychylenie [°]")
+title("Przebieg orientacji obiektu w czasie", "FontSize",20)
+
+xlabel("Czas [s]", "FontSize",15)
+ylabel("Wychylenie [°]", "FontSize",15)
+
 
 
 figure(2)
 plot(czas_2, y_2, czas_2, yk_2, czas_2,k_2 );
 legend("Dane z czujnika [°]", "Dane po filtracji filtrem Kalmana [°]", "Kąt zadany [°]")
 grid on
-title("Przebieg orientacji obiektu w czasie")
-xlabel("Czas [s]")
-ylabel("Wychylenie [°]")
+title("Ilustracja awarii czujnika", "FontSize",20)
+xlabel("Czas [s]", "FontSize",15)
+ylabel("Wychylenie [°]", "FontSize",15)
+
+
+figure(3)
+plot(czas_2, yk_2, czas_2,k_2, czas_2, w_2, czas_2, wzad_2 );
+legend(" Dane po filtracji filtrem Kalmana [°]", "Kąt zadany [°]", "Wyskość  [cm]", "Wysokość zadana [cm]")
+grid on
+title("Przebieg orientacji obiektu w czasie", "FontSize",20)
+xlabel("Czas [s]", "FontSize",15)
+ylabel("Wychylenie [°]", "FontSize",15)
+
+
+
 

@@ -20,8 +20,8 @@ int RateCalibrationNumber;
 float AccX, AccY, AccZ;
 float AngleRoll, AnglePitch;
 uint32_t LoopTimer;
-float KalmanAngleRoll = 0, KalmanUncertaintyAngleRoll = 1 * 1;
-float KalmanAnglePitch = 0, KalmanUncertaintyAnglePitch = 1 * 1;
+float KalmanAngleRoll = 0, KalmanUncertaintyAngleRoll = 1000;
+float KalmanAnglePitch = 0, KalmanUncertaintyAnglePitch = 1000;
 float Kalman1DOutput[] = { 0, 0 };
 
 
@@ -34,8 +34,8 @@ Adafruit_VL53L0X lox = Adafruit_VL53L0X();
 char XML[2560];
 char buf[64];
 
-int PIN_SILNIK1 = 14;
-int PIN_SILNIK2 = 12;  //GPIO12
+int PIN_SILNIK1 = 12;
+int PIN_SILNIK2 = 14;  //GPIO14
 int PIN_ECHO = 13;     //SDD3  - echo do pomiaru odleglosci
 int PIN_TRIG = 2;      //SDD2 - trig
 
@@ -65,16 +65,16 @@ bool test_odbioru_danych = false;
 Servo Silnik1;
 Servo Silnik2;
 
-float u_min = 0.02;  //0% mocy silnika
-float u_max = 1;  //100% silnika
+float u_min = 2;  //2% mocy silnika
+float u_max = 1;  //100% silnika  - potem mnożone przez współczynnik mocy, nie bać się!!!!
 //const float ts = 0.2;      //czas probkowania (mysle ze co 50ms wystarczy)
 
 float kp_wys = 0.01;
-float ki_wys = 0.01;
+float ki_wys = 0;
 float kd_wys = 0;
 
 float kp_kat = 0.01;
-float ki_kat = 0.01;
+float ki_kat = 0;
 float kd_kat = 0;
 
 char sterowanie_tryb = 'o';  ///o - oba, k- kątem, w - wysokością
@@ -98,8 +98,10 @@ int16_t gx, gy, gz;
 void kalman_1d(float KalmanState, float KalmanUncertainty, float KalmanInput, float KalmanMeasurement, bool roll) {
   //funkcja realizujaca filtr Kalmana
   //uwaga
-  static float war_zyro = 2, war_akc = 3.5;
-  static float ts_kalman = 0;
+  
+  static float war_zyro = 3, war_akc = 1;  // większe zyro - mniej ufamy predkosci, wieksze akc - mniej ufamy odczyttom (generalnie odczyty są dobre)
+  static float ts_kalman = 0.004;
+  /*
   static float ts_roll, ts_pitch = 0;
   static long t_minal_roll = micros(), t_minal_pitch = micros();
 
@@ -112,7 +114,8 @@ void kalman_1d(float KalmanState, float KalmanUncertainty, float KalmanInput, fl
     t_minal_pitch = micros();
     ts_kalman = ts_pitch;
   }
-  ts_kalman = 0.004;
+  */
+
   KalmanState = KalmanState + ts_kalman * KalmanInput;                         //nowa predykcja kata
   KalmanUncertainty = KalmanUncertainty + ts_kalman * ts_kalman * war_zyro * war_zyro;       //niepewnosc predykcji (4 * 4 - wariancja pomiarow zyroskopu)
   float KalmanGain = KalmanUncertainty * 1 / (1 * KalmanUncertainty + war_akc * war_akc);  //wzmocnienie Kalmana - od niego zalezy, jak wazne sa pomiary, a jak wazna predykcja (3 * 3 - wariancja pomiarow akcelerometru)
@@ -126,12 +129,12 @@ void gyro_signals() {
   mpu.getMotion6(&ax, &ay, &az, &gx, &gy, &gz);
 
   RateRoll = (float)-gx / 65.5;  //prawdziwa predkosc po podzieleniu przez ustalona rozdzielczosc bitowa
-  RatePitch = (float)-gy / 65.5;
+  RatePitch = (float)gy / 65.5;
   RateYaw = (float)-gz / 65.5;
 
-  AccX = (float)ax / 4096 - 0.04;  // wartosci sluza do kalibracji akcelerometru
+  AccX = (float)-ax / 4096 - 0.04;  // wartosci sluza do kalibracji akcelerometru
   AccY = (float)ay / 4096;
-  AccZ = (float)az / 4096 - 0.11;
+  AccZ = (float)-az / 4096 - 0.11;
 
   AngleRoll = atan(AccY / sqrt(AccX * AccX + AccZ * AccZ)) * 1 / (3.142 / 180);
   AnglePitch = -atan(AccX / sqrt(AccY * AccY + AccZ * AccZ)) * 1 / (3.142 / 180);
@@ -218,6 +221,12 @@ void SendXML() {
   strcat(XML, buf);
 
 */
+
+  sprintf(buf, "<YKALMR>%f</YKALMR>\n",  kd_kat);
+  strcat(XML, buf);
+
+  sprintf(buf, "<YKALMU>%f</YKALMU>\n", kp_kat);
+  strcat(XML, buf);
 
   sprintf(buf, "<XCZYST>%f</XCZYST>\n", ((int)(AngleRoll*1000))/1000.0);
   strcat(XML, buf);
@@ -365,37 +374,37 @@ void Aktualizuj_PID() {
 
   if (odp.startsWith("Pasek_wys_kp")) {
     odp.replace("Pasek_wys_kp", "");
-    kp_wys = odp.toInt() / 100.0;
+    kp_wys = odp.toInt() / 500.0;
     war_na_serwer = String(kp_wys);
   }
 
   if (odp.startsWith("Pasek_wys_ki")) {
     odp.replace("Pasek_wys_ki", "");
-    ki_wys = odp.toInt() / 100.0;
+    ki_wys = odp.toInt() / 500.0;
     war_na_serwer = String(ki_wys);
   }
 
   if (odp.startsWith("Pasek_wys_kd")) {
     odp.replace("Pasek_wys_kd", "");
-    kd_wys = odp.toInt() / 100.0;
+    kd_wys = odp.toInt() / 500.0;
     war_na_serwer = String(kd_wys);
   }
 
   if (odp.startsWith("Pasek_kat_kp")) {
     odp.replace("Pasek_kat_kp", "");
-    kp_kat = odp.toInt() / 100.0;
+    kp_kat = odp.toInt() / 500.0;
     war_na_serwer = String(kp_kat);
   }
 
   if (odp.startsWith("Pasek_kat_ki")) {
     odp.replace("Pasek_kat_ki", "");
-    ki_kat = odp.toInt() / 100.0;
+    ki_kat = odp.toInt() / 500.0;
     war_na_serwer = String(ki_kat);
   }
 
   if (odp.startsWith("Pasek_kat_kd")) {
     odp.replace("Pasek_kat_kd", "");
-    kd_kat = odp.toInt() / 100.0;
+    kd_kat = odp.toInt() / 500.0;
     war_na_serwer = String(kd_kat);
   }
 
@@ -483,12 +492,14 @@ void zmierzOdleglosc() {
 void sterowanie() {
   //najpierw wysterowujemy wysokość
 
+  /*
   static float ts = 0;
   static long t_minal = micros();
   ts = (micros() - t_minal) / 1000000.0;  //podzielic
   t_minal = micros();
+  */
 
-
+  static float ts = 0.02;
   //dane do sterowania kątem
 
     static float e_kat;
@@ -502,9 +513,11 @@ void sterowanie() {
 
   
 
-    if(stop)
+    if(stop){
       calka_wys = calka_kat_plus = calka_kat_minus =0;
-    stop = false;
+      stop = false;
+      return;
+    }
 
   if (sterowanie_tryb == 'k' || sterowanie_tryb == 'o') {
 
@@ -551,6 +564,7 @@ void sterowanie() {
 }
 
 void nasycenie() {
+  return;
   if (pwm_1_zadany > 1000 + 10 * wsp_moc || pwm_1_zadany > 2000)
     pwm_1_zadany = 1000 + 10 * wsp_moc;
 
@@ -569,7 +583,7 @@ float PID(float kp, float ki, float kd, float e, float e_stary, float* calka, fl
 
   *calka = *calka + e * ts_PID;
   float pochodna = (e - e_stary) / ts_PID;
-  float u = kp * e + ki * (*calka) + kd * pochodna;  //bez sprawdzenia predkosci
+  float u =kp * e + ki * (*calka)  + kd * pochodna;
 
   if (u > u_max) {
     u = u_max;
@@ -741,6 +755,12 @@ void setup() {
   Serial.println();
   i2cdetect();
 
+  pinMode(15, OUTPUT);   //AD0 do MPU
+  digitalWrite(15, LOW);
+
+  //pinMode(9, OUTPUT);   //ewentualnie AD0 do Vlx53lox
+  //digitalWrite(9, LOW);
+
   Serial.println("Initializing MPU...");
   mpu.initialize();
   Serial.println("Testing MPU6050 connection...");
@@ -805,6 +825,7 @@ void setup() {
   RateCalibrationRoll /= 2000;
   RateCalibrationPitch /= 2000;
   RateCalibrationYaw /= 2000;
+
 
 
   lox.startRangeContinuous();
