@@ -49,6 +49,11 @@ int wsp_moc = 30;  //30 %mocy
 bool stop =false; //zeruj calki w sterowaniu
 
 float wysokosc = 0.25;
+float wysokosc_stara = 0.25;
+float predkosc_wysokosci = 0;
+
+float Kalman_wysokosc = 0;
+float KalmanUncertaintyWysokosc = 1000;
 
 long czas = 0;
 
@@ -95,12 +100,17 @@ int16_t ax, ay, az;
 int16_t gx, gy, gz;
 
 
-void kalman_1d(float KalmanState, float KalmanUncertainty, float KalmanInput, float KalmanMeasurement, bool roll) {
+void kalman_1d(float KalmanState, float KalmanUncertainty, float KalmanInput, float KalmanMeasurement, bool roll, bool wysokosc) {
   //funkcja realizujaca filtr Kalmana
   //uwaga
   
   static float war_zyro = 3, war_akc = 1;  // większe zyro - mniej ufamy predkosci, wieksze akc - mniej ufamy odczyttom (generalnie odczyty są dobre)
-  static float ts_kalman = 0.004;
+  if (!wysokosc){
+    float ts_kalman = 0.004;
+  }
+  else {
+    float ts_kalman = 0.02;
+  }
   /*
   static float ts_roll, ts_pitch = 0;
   static long t_minal_roll = micros(), t_minal_pitch = micros();
@@ -154,6 +164,7 @@ void watchdog_ts() {
   czas_odl = czas_kat = micros();
   if (czas_odl - czas_stary_odl > 20000) {
     zmierzOdleglosc();
+    kalman_1d(Kalman_wysokosc, KalmanUncertaintyWysokosc, predkosc_wysokosci, wysokosc, false, true);
     czas_stary_odl = czas_odl;
     if (ster_auto) { 
       sterowanie();        //sterowanie z częstotliwością 50 Hz
@@ -166,13 +177,13 @@ void watchdog_ts() {
     RateYaw -= RateCalibrationYaw;
 
     //roll
-    kalman_1d(KalmanAngleRoll, KalmanUncertaintyAngleRoll, RateRoll, AngleRoll, true);
+    kalman_1d(KalmanAngleRoll, KalmanUncertaintyAngleRoll, RateRoll, AngleRoll, true, false);
     KalmanAngleRoll = Kalman1DOutput[0];
     KalmanUncertaintyAngleRoll = Kalman1DOutput[1];
     //KalmanAngleRoll = AngleRoll;
 
     //pitch
-    kalman_1d(KalmanAnglePitch, KalmanUncertaintyAnglePitch, RatePitch, AnglePitch, false);
+    kalman_1d(KalmanAnglePitch, KalmanUncertaintyAnglePitch, RatePitch, AnglePitch, false, false);
     KalmanAnglePitch = Kalman1DOutput[0];
     KalmanUncertaintyAnglePitch = Kalman1DOutput[1];
     //KalmanAnglePitch = AnglePitch;
@@ -482,10 +493,11 @@ void Pasek_moc() {
 }
 
 void zmierzOdleglosc() {
-
+  stara_wysokosc = wysokosc;
   if (lox.isRangeComplete())
     wysokosc = ((float)lox.readRange()) / 10;
 
+  predkosc_wysokosci = (wysokosc - stara_wysokosc) / 0.02;
   return;
 }
 
