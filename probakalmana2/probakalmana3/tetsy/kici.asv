@@ -68,10 +68,10 @@ ylabel("Wychylenie [°]", "FontSize",15)
 
 figure(4)
 plot(yk_2(1:end-200),w_2(1:end-200));
-%legend(" Dane po filtracji filtrem Kalmana [°]", "Kąt zadany [°]", "Wyskość  [cm]", "Wysokość zadana [cm]")
+legend(" Dane po filtracji filtrem Kalmana [°]", "Kąt zadany [°]", "Wyskość  [cm]", "Wysokość zadana [cm]")
 grid on
-title("Przebieg trajektorii fazowej", "FontSize",20)
-ylabel("Wysokość [cm]", "FontSize",15)
+title("Przebieg orientacji obiektu w czasie", "FontSize",20)
+ylabel("Wysokość []", "FontSize",15)
 xlabel("Wychylenie [°]", "FontSize",15)
 
 
