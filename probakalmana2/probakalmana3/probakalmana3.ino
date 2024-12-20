@@ -126,7 +126,7 @@ void kalman_1d(float KalmanState, float KalmanUncertainty, float KalmanInput, fl
   }
   */
 
-  KalmanState = KalmanState + ts_kalman * KalmanInput;                         //nowa predykcja kata
+  KalmanState = KalmanState + ts_kalman * KalmanInput;                                       //nowa predykcja kata
   KalmanUncertainty = KalmanUncertainty + ts_kalman * ts_kalman * war_zyro * war_zyro;       //niepewnosc predykcji (4 * 4 - wariancja pomiarow zyroskopu)
   float KalmanGain = KalmanUncertainty * 1 / (1 * KalmanUncertainty + war_akc * war_akc);  //wzmocnienie Kalmana - od niego zalezy, jak wazne sa pomiary, a jak wazna predykcja (3 * 3 - wariancja pomiarow akcelerometru)
   KalmanState = KalmanState + KalmanGain * (KalmanMeasurement - KalmanState);  //kolejna predykcja kata (na podstawie wzmocnienia Kalmana)

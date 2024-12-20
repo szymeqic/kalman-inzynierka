@@ -221,10 +221,10 @@ option {
               <div class="category">Odczyty czujnika MPU6050</div>
               <div class = "column" style = "width: 40%;">             
               <br>
-              <div class="bodytext">Obrót wokół osi X: <span id="osx">123</span>
+              <div class="bodytext">Obrót wokół osi X: <span id="osx">123</span> °
                  <br><br>
                  
-                  Obrót wokół osi Y: <span id="osy">123</span>   
+                  Obrót wokół osi Y: <span id="osy">123</span> °   
                   <br><br>
                  
              
@@ -233,10 +233,10 @@ option {
         
             <div class = "column" style = "width: 30%;">
               
-              <br>
-              <div class="bodytext">Szybkość: <span id="xkalmr_wysw">123</span>
+              
+              <div class="bodytext">Szybkość: <span id="xkalmr_wysw">123</span> <sup>°</sup>&frasl;<sub>s</sub>
                  <br><br>
-                 Szybkość: <span id="ykalmr_wysw">123</span>
+                 Szybkość: <span id="ykalmr_wysw">123</span> <sup>°</sup>&frasl;<sub>s</sub>
                   <br>
 
              </div>
@@ -244,19 +244,19 @@ option {
 
             <div class = "column" style = "width: 30%;">
               
-              <br>
+              
               <div class="bodytext">
-                Niepewność: <span id="xkalmu_wysw">123</span> 
+                Niepewność: <span id="xkalmu_wysw">123</span> <sup>°<sup>2</sup></sup>&frasl;<sub>s<sup>2</sup></sub>
                 
                 <br><br>
-                 Niepewność: <span id="ykalmu_wysw">123</span>  
+                 Niepewność: <span id="ykalmu_wysw">123</span> <sup>°<sup>2</sup></sup>&frasl;<sub>s<sup>2</sup></sub>
                  <br><br>
 
              </div>
             </div>
           
         </div>
-        <div class = "bodytext">Wysokość nad podstawą: <span id="wys">123</span></div>
+        <div class = "bodytext">Wysokość nad podstawą: <span id="wys">123</span> cm</div> 
         <br><br>
 
       <!-- >
@@ -269,13 +269,13 @@ option {
     <div class ="row">
       <div class="column">
         <div class="bodytext">
-          Odczyt obrotu wokół osi X: <span id="czysty_x">123</span>
+          Odczyt obrotu wokół osi X: <span id="czysty_x">123</span> °
         </div>
       </div>
 
       <div class = "column">
         <div class = "bodytext">
-          Odczyt obrotu wokół osi Y: <span id="czysty_y">123</span>
+          Odczyt obrotu wokół osi Y: <span id="czysty_y">123</span> °
         </div>
       </div>
 
@@ -459,7 +459,7 @@ option {
           <div class = "bodytext">
           <br>
           <br>
-          <div class="bodytext">współczynnik mocy <span id="wsp_mocy_tekst">30</span> %</div>
+          <div class="bodytext">Maksymalne wypełnienie sygnału sterującego: <span id="wsp_mocy_tekst">30</span> %</div>
           <input type="range" class="fanrpmslider" min="0" max="100" value = "30" width = "0%"  id = "Pasek_wsp_moc" oninput="Pasek_moc(this.value)"/>
           <br>
           <br>
