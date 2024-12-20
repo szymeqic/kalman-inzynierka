@@ -1,5 +1,5 @@
-dane_1 = csvread("dane33.csv",2,0);
-dane_2 = csvread("dane34wys.csv",2,0);
+dane_1 = csvread("dane41.csv",2,0);
+dane_2 = csvread("dane45.csv",2,0);
 
 
 
@@ -38,7 +38,7 @@ czas_2 = czas_2/1000;
 czas_2 = czas_2 - czas_2(1);
 
 figure(1)
-plot(czas_1, y_1, czas_1, yk_1, czas_1,k_1 );
+plot(czas_1, y_1, czas_1, yk_1, czas_1,k_1, czas_1, wzad_1, czas_1, w_1 );
 legend("Dane z czujnika [°]", "Dane po filtracji filtrem Kalmana [°]", "Kąt zadany [°]")
 grid on
 title("Przebieg orientacji obiektu w czasie", "FontSize",20)
